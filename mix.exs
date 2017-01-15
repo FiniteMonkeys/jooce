@@ -16,6 +16,7 @@ defmodule Jooce.Mixfile do
   def application do
     # Specify extra applications you'll use from Erlang/Elixir
     [extra_applications: [:logger, :connection],
+    [extra_applications: [:logger, :exprotobuf],
      mod: {Jooce.Application, []}]
   end
 
@@ -30,5 +31,6 @@ defmodule Jooce.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [{:connection, "~> 1.0.4"}]
+    [{:exprotobuf, "~> 1.2.3"}]
   end
 end
