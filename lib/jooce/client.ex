@@ -1,7 +1,7 @@
 defmodule Jooce.Client do
   use Connection
 
-  @initial_state      %{host: '127.0.0.1', port: 50000, opts: [], timeout: 5000, sock: nil}
+  @initial_state      %{host: '127.0.0.1', port: 50000, opts: [], timeout: 5000, sock: nil, guid: nil}
   @krpc_helo          <<0x48, 0x45, 0x4C, 0x4C, 0x4F, 0x2D, 0x52, 0x50, 0x43, 0x00, 0x00, 0x00>>
   @thirty_two_zeros   String.duplicate(<<0>>, 32)
 
@@ -11,6 +11,10 @@ defmodule Jooce.Client do
 
   def start_link do
     Connection.start_link(__MODULE__, @initial_state, name: __MODULE__)
+  end
+
+  def guid(conn) do
+    Connection.call(conn, :guid)
   end
 
   ## low-level API
@@ -38,8 +42,14 @@ defmodule Jooce.Client do
   def connect(_info, %{sock: nil} = state) do
     case :gen_tcp.connect(state.host, state.port, [:binary, {:active, false}, {:packet, :raw}] ++ state.opts, state.timeout) do
       {:ok, sock} ->
-        # Connection.call(self, {:handshake, :hello})
-        {:ok, %{state | sock: sock}}
+        ## handshake stuff goes here
+        :ok = :gen_tcp.send(sock, @krpc_helo)
+        <<packet::binary-size(32), _::binary>> = "Jooce" <> @thirty_two_zeros
+        :ok = :gen_tcp.send(sock, packet)
+        {:ok, guid} = :gen_tcp.recv(sock, 16, 10000)
+        # end handshake stuff
+
+        {:ok, %{state | sock: sock, guid: guid}}
       {:error, reason} ->
         :error_logger.format("Connection error: ~s~n", [:inet.format_error(reason)])
         {:backoff, 1000, state}
@@ -82,6 +92,10 @@ defmodule Jooce.Client do
       {:error, _} = error ->
         {:disconnect, error, error, state}
     end
+  end
+
+  def handle_call(:guid, _, %{guid: guid} = state) do
+    {:reply, {:ok, guid}, state}
   end
 
   def handle_call(:close, from, state) do
