@@ -2,7 +2,7 @@ defmodule Jooce.Client do
   use Connection
 
   @initial_state      %{host: '127.0.0.1', port: 50000, opts: [], timeout: 5000, sock: nil, guid: nil}
-  @krpc_helo          <<0x48, 0x45, 0x4C, 0x4C, 0x4F, 0x2D, 0x52, 0x50, 0x43, 0x00, 0x00, 0x00>>
+  @rpc_helo           <<0x48, 0x45, 0x4C, 0x4C, 0x4F, 0x2D, 0x52, 0x50, 0x43, 0x00, 0x00, 0x00>>
   @thirty_two_zeros   String.duplicate(<<0>>, 32)
 
   ##
@@ -43,7 +43,7 @@ defmodule Jooce.Client do
     case :gen_tcp.connect(state.host, state.port, [:binary, {:active, false}, {:packet, :raw}] ++ state.opts, state.timeout) do
       {:ok, sock} ->
         ## handshake stuff goes here
-        :ok = :gen_tcp.send(sock, @krpc_helo)
+        :ok = :gen_tcp.send(sock, @rpc_helo)
         <<packet::binary-size(32), _::binary>> = "Jooce" <> @thirty_two_zeros
         :ok = :gen_tcp.send(sock, packet)
         {:ok, guid} = :gen_tcp.recv(sock, 16, 10000)
