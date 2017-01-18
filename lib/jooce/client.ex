@@ -1,8 +1,9 @@
 defmodule Jooce.Client do
   use Connection
 
-  @initial_state      %{host: '127.0.0.1', port: 50000, opts: [], timeout: 5000, sock: nil, guid: nil}
+  @initial_state      %{name: "Jooce", host: '127.0.0.1', rpc_port: 50000, stream_port: 50001, opts: [], timeout: 5000, sock: nil, guid: nil}
   @rpc_helo           <<0x48, 0x45, 0x4C, 0x4C, 0x4F, 0x2D, 0x52, 0x50, 0x43, 0x00, 0x00, 0x00>>
+  @stream_helo        <<0x48, 0x45, 0x4C, 0x4C, 0x4F, 0x2D, 0x53, 0x54, 0x52, 0x45, 0x41, 0x4D>>
   @thirty_two_zeros   String.duplicate(<<0>>, 32)
 
   ##
@@ -16,8 +17,6 @@ defmodule Jooce.Client do
   def guid(conn) do
     Connection.call(conn, :guid)
   end
-
-  ## low-level API
 
   def send(conn, data) do
     Connection.call(conn, {:send, data})
@@ -40,11 +39,12 @@ defmodule Jooce.Client do
   end
 
   def connect(_info, %{sock: nil} = state) do
-    case :gen_tcp.connect(state.host, state.port, [:binary, {:active, false}, {:packet, :raw}] ++ state.opts, state.timeout) do
+    case :gen_tcp.connect(state.host, state.rpc_port, [:binary, {:active, false}, {:packet, :raw}] ++ state.opts, state.timeout) do
       {:ok, sock} ->
+
         ## handshake stuff goes here
         :ok = :gen_tcp.send(sock, @rpc_helo)
-        <<packet::binary-size(32), _::binary>> = "Jooce" <> @thirty_two_zeros
+        <<packet::binary-size(32), _::binary>> = state.name <> @thirty_two_zeros
         :ok = :gen_tcp.send(sock, packet)
         {:ok, guid} = :gen_tcp.recv(sock, 16, 10000)
         # end handshake stuff
