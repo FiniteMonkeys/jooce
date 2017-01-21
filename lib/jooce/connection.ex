@@ -1,4 +1,4 @@
-defmodule Jooce.Client do
+defmodule Jooce.Connection do
   use Connection
 
   @initial_state      %{name: "Jooce", host: '127.0.0.1', rpc_port: 50000, stream_port: 50001, opts: [], timeout: 5000, sock: nil, guid: nil}
