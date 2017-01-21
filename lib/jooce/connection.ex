@@ -66,7 +66,7 @@ defmodule Jooce.Connection do
       {:error, reason} ->
         :error_logger.format("Connection error: ~s~n", [:inet.format_error(reason)])
     end
-    {:connect, :reconnect, %{state | sock: nil}}
+    {:stop, :normal, %{state | sock: nil}}
   end
 
   def handle_call(_, _, %{sock: nil} = state) do
