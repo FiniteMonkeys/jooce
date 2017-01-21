@@ -1,6 +1,6 @@
-defmodule JooceClientTest do
+defmodule JooceConnectionTest do
   use ExUnit.Case
-  doctest Jooce.Client
+  doctest Jooce.Connection
 
   test "procedural Erlang" do
     # assert 1 + 1 == 2
@@ -20,11 +20,11 @@ defmodule JooceClientTest do
 
   test "procedural Elixir" do
     IO.puts("connecting")
-    {:ok, conn} = Jooce.Client.start_link
+    {:ok, conn} = Jooce.Connection.start_link
     IO.puts("getting guid")
-    {:ok, guid} = Jooce.Client.guid(conn)
+    {:ok, guid} = Jooce.Connection.guid(conn)
     IO.puts(inspect guid)
     IO.puts("closing connection")
-    :ok = Jooce.Client.close(conn)
+    :ok = Jooce.Connection.close(conn)
   end
 end
