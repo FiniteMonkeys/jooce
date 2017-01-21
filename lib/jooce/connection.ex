@@ -10,8 +10,8 @@ defmodule Jooce.Connection do
   ## API
   ##
 
-  def start_link do
-    Connection.start_link(__MODULE__, @initial_state, name: __MODULE__)
+  def start_link(name \\ "Jooce") do
+    Connection.start_link(__MODULE__, %{@initial_state | name: name}, name: __MODULE__)
   end
 
   def guid(conn) do
