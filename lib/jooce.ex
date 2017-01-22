@@ -90,8 +90,9 @@ defmodule Jooce do
   """
   def get_services do
     {:ok, conn} = Jooce.Connection.start
-    get_services(conn)
+    services = get_services(conn)
     Jooce.Connection.stop(conn)
+    services
   end
 
   def get_services(conn) do
@@ -104,34 +105,23 @@ defmodule Jooce do
     {resp_len, _} = Jooce.Utils.read_varint(conn) |> :gpb.decode_varint
     {:ok, resp} = Jooce.Connection.recv(conn, resp_len)
     # IO.puts inspect (resp |> Jooce.Protobuf.Response.decode).return_value |> Jooce.Protobuf.Services.decode
-    ((resp |> Jooce.Protobuf.Response.decode).return_value |> Jooce.Protobuf.Services.decode).services |> Jooce.puts_services
+    (resp |> Jooce.Protobuf.Response.decode).return_value |> Jooce.Protobuf.Services.decode
   end
 
-  def puts_services([]), do: true
-  def puts_services([ service ]), do: puts_service(service)
-  def puts_services([ service | rest ]) do
-    puts_service(service)
-    puts_services(rest)
+  def puts_services(%Jooce.Protobuf.Services{services: services}, device \\ :stderr) do
+    for service <- services do
+      IO.puts device, service.name
+      # string documentation = 5;
+      # repeated Class classes = 3;
+      # repeated Enumeration enumerations = 4;
+      IO.puts device, "  Procedures:"
+      puts_procedures service.procedures, device
+
+      IO.puts device, ""
+    end
   end
 
-  def puts_service(service) do
-    IO.puts service.name
-    # string documentation = 5;
-    # repeated Class classes = 3;
-    # repeated Enumeration enumerations = 4;
-    IO.puts "  Procedures:"
-    Jooce.puts_procedures(service.procedures)
-    IO.puts ""
-  end
-
-  def puts_procedures([]), do: true
-  def puts_procedures([ procedure ]), do: puts_procedure(procedure)
-  def puts_procedures([ procedure | rest ]) do
-    puts_procedure(procedure)
-    puts_procedures(rest)
-  end
-
-  def puts_procedure(procedure) do
+  def puts_procedures(procedures, device) do
     # %Jooce.Protobuf.Procedure{
     #   attributes: ["Class.Property.Set(Drawing.Text,Material)", "ParameterType(0).Class(Drawing.Text)"],
     #   documentation: "<doc>\n<summary>\nMaterial used to render the object.\nCreates the material from a shader with the given name.\n</summary>\n</doc>",
@@ -143,14 +133,14 @@ defmodule Jooce do
     #   return_type: ""
     # }
 
-    IO.puts "    #{procedure.name}"
+    for procedure <- procedures do
+      IO.puts device, "    #{procedure.name}"
+    end
   end
-
 
 # AddStream
 # RemoveStream
 # get_Clients
 # get_CurrentGameScene
-
 
 end
