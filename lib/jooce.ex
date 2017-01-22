@@ -3,7 +3,28 @@ defmodule Jooce do
   Documentation for Jooce.
   """
 
-  @doc """
+  @doc ~S"""
+  Open a connection to a kRPC server.
+  """
+  def start do
+    Jooce.Connection.start
+  end
+
+  @doc ~S"""
+  Open a connection to a kRPC server and links it to the current process.
+  """
+  def start_link do
+    Jooce.Connection.start_link
+  end
+
+  @doc ~S"""
+  Close a connection to a kRPC server.
+  """
+  def stop(conn) do
+    Jooce.Connection.stop(conn)
+  end
+
+  @doc ~S"""
   Returns status information about the server.
 
   ## Reference
