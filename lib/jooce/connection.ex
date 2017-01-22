@@ -10,8 +10,16 @@ defmodule Jooce.Connection do
   ## API
   ##
 
+  def start(name \\ "Jooce") do
+    Connection.start(__MODULE__, %{@initial_state | name: name}, name: __MODULE__)
+  end
+
   def start_link(name \\ "Jooce") do
     Connection.start_link(__MODULE__, %{@initial_state | name: name}, name: __MODULE__)
+  end
+
+  def stop(conn) do
+    Connection.call(conn, :close)
   end
 
   def guid(conn) do
@@ -24,10 +32,6 @@ defmodule Jooce.Connection do
 
   def recv(conn, bytes, timeout \\ 3000) do
     Connection.call(conn, {:recv, bytes, timeout})
-  end
-
-  def close(conn) do
-    Connection.call(conn, :close)
   end
 
   ##
