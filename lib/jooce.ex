@@ -58,9 +58,9 @@ defmodule Jooce do
 
   """
   def get_status do
-    {:ok, conn} = Jooce.Connection.start_link
+    {:ok, conn} = Jooce.Connection.start
     status = get_status(conn)
-    Jooce.Connection.close(conn)
+    Jooce.Connection.stop(conn)
     status
   end
 
@@ -76,7 +76,7 @@ defmodule Jooce do
     (resp |> Jooce.Protobuf.Response.decode).return_value |> Jooce.Protobuf.Status.decode
   end
 
-  @doc """
+  @doc ~S"""
   Returns status information about the server.
 
   ## Reference
@@ -89,19 +89,22 @@ defmodule Jooce do
 
   """
   def get_services do
+    {:ok, conn} = Jooce.Connection.start
+    get_services(conn)
+    Jooce.Connection.stop(conn)
+  end
+
+  def get_services(conn) do
     req = Jooce.Protobuf.Request.new(service: "KRPC", procedure: "GetServices")
           |> Jooce.Protobuf.Request.encode
     req_len = String.length(req) |> :gpb.encode_varint
 
-    {:ok, conn} = Jooce.Connection.start_link
     Jooce.Connection.send(conn, req_len <> req)
 
     {resp_len, _} = Jooce.Utils.read_varint(conn) |> :gpb.decode_varint
     {:ok, resp} = Jooce.Connection.recv(conn, resp_len)
     # IO.puts inspect (resp |> Jooce.Protobuf.Response.decode).return_value |> Jooce.Protobuf.Services.decode
     ((resp |> Jooce.Protobuf.Response.decode).return_value |> Jooce.Protobuf.Services.decode).services |> Jooce.puts_services
-
-    Jooce.Connection.close(conn)
   end
 
   def puts_services([]), do: true
