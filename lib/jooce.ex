@@ -165,4 +165,27 @@ defmodule Jooce do
 # get_Clients
 # get_CurrentGameScene
 
+
+  @doc ~S"""
+  Returns the current game scene.
+
+  """
+  def get_current_scene(conn) do
+    {:ok, return_value, _} = Jooce.Connection.call_rpc(conn, "KRPC", "get_CurrentGameScene")
+    case return_value do
+      <<0>> ->
+        :space_center
+      <<1>> ->
+        :flight
+      <<2>> ->
+        :tracking_station
+      <<3>> ->
+        :vab
+      <<4>> ->
+        :sph
+      _ ->
+        nil
+    end
+  end
+
 end
