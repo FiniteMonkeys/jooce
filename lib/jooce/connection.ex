@@ -10,8 +10,16 @@ defmodule Jooce.Connection do
   ## API
   ##
 
+  def start(name \\ "Jooce") do
+    Connection.start(__MODULE__, %{@initial_state | name: name}, name: __MODULE__)
+  end
+
   def start_link(name \\ "Jooce") do
     Connection.start_link(__MODULE__, %{@initial_state | name: name}, name: __MODULE__)
+  end
+
+  def stop(conn) do
+    Connection.call(conn, :close)
   end
 
   def guid(conn) do
@@ -26,8 +34,24 @@ defmodule Jooce.Connection do
     Connection.call(conn, {:recv, bytes, timeout})
   end
 
-  def close(conn) do
-    Connection.call(conn, :close)
+  def call_rpc(conn, service, procedure) do
+    req = Jooce.Protobuf.Request.new(service: service, procedure: procedure)
+          |> Jooce.Protobuf.Request.encode
+    req_len = String.length(req) |> :gpb.encode_varint
+    Jooce.Connection.send(conn, req_len <> req)
+
+    {resp_len, _} = Jooce.Utils.read_varint(conn) |> :gpb.decode_varint
+    {:ok, resp} = Jooce.Connection.recv(conn, resp_len)
+
+    response = Jooce.Protobuf.Response.decode(resp)
+    cond do
+      response.has_error ->
+        {:error, response.error, response.time}
+      response.has_return_value ->
+        {:ok, response.return_value, response.time}
+      true ->
+        {:ok, nil, response.time}
+    end
   end
 
   ##
