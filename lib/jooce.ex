@@ -99,10 +99,47 @@ defmodule Jooce do
       # string documentation = 5;
       # repeated Class classes = 3;
       # repeated Enumeration enumerations = 4;
+      IO.puts device, "  Enumerations:"
+      puts_enumerations service.enumerations, device
       IO.puts device, "  Procedures:"
       puts_procedures service.procedures, device
 
       IO.puts device, ""
+    end
+  end
+
+  def puts_enumerations(enumerations, device) do
+    # %Jooce.Protobuf.Enumeration{
+    #   documentation: "<doc>\n<summary>\nFont style.\n</summary>\n</doc>",
+    #   name: "FontStyle",
+    #   values: [
+    #     %Jooce.Protobuf.EnumerationValue{
+    #       documentation: "<doc>\n<summary>\nNormal.\n</summary>\n</doc>",
+    #       name: "Normal",
+    #       value: 0
+    #     },
+    #     %Jooce.Protobuf.EnumerationValue{
+    #       documentation: "<doc>\n<summary>\nBold.\n</summary>\n</doc>",
+    #       name: "Bold",
+    #       value: 1
+    #     },
+    #     %Jooce.Protobuf.EnumerationValue{
+    #       documentation: "<doc>\n<summary>\nItalic.\n</summary>\n</doc>",
+    #       name: "Italic",
+    #       value: 2
+    #     },
+    #     %Jooce.Protobuf.EnumerationValue{
+    #       documentation: "<doc>\n<summary>\nBold and italic.\n</summary>\n</doc>",
+    #       name: "BoldAndItalic",
+    #       value: 3
+    #     }
+    #   ]
+    # }
+    for enum <- enumerations do
+      IO.puts device, "    #{enum.name}"
+      for val <- enum.values do
+        IO.puts device, "      #{val.value} = #{val.name}"
+      end
     end
   end
 
