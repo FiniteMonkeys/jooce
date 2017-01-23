@@ -1,54 +1,56 @@
-# ServoGroups
-# ServoGroupWithName
-# ServoWithName
-# get_Available
-# Servo_MoveRight
-# Servo_MoveLeft
-# Servo_MoveCenter
-# Servo_MoveNextPreset
-# Servo_MovePrevPreset
-# Servo_MoveTo
-# Servo_Stop
-# Servo_get_Name
-# Servo_set_Name
-# Servo_get_Part
-# Servo_set_Highlight
-# Servo_get_Position
-# Servo_get_MinConfigPosition
-# Servo_get_MaxConfigPosition
-# Servo_get_MinPosition
-# Servo_set_MinPosition
-# Servo_get_MaxPosition
-# Servo_set_MaxPosition
-# Servo_get_ConfigSpeed
-# Servo_get_Speed
-# Servo_set_Speed
-# Servo_get_CurrentSpeed
-# Servo_set_CurrentSpeed
-# Servo_get_Acceleration
-# Servo_set_Acceleration
-# Servo_get_IsMoving
-# Servo_get_IsFreeMoving
-# Servo_get_IsLocked
-# Servo_set_IsLocked
-# Servo_get_IsAxisInverted
-# Servo_set_IsAxisInverted
-# ServoGroup_ServoWithName
-# ServoGroup_MoveRight
-# ServoGroup_MoveLeft
-# ServoGroup_MoveCenter
-# ServoGroup_MoveNextPreset
-# ServoGroup_MovePrevPreset
-# ServoGroup_Stop
-# ServoGroup_get_Name
-# ServoGroup_set_Name
-# ServoGroup_get_ForwardKey
-# ServoGroup_set_ForwardKey
-# ServoGroup_get_ReverseKey
-# ServoGroup_set_ReverseKey
-# ServoGroup_get_Speed
-# ServoGroup_set_Speed
-# ServoGroup_get_Expanded
-# ServoGroup_set_Expanded
-# ServoGroup_get_Servos
-# ServoGroup_get_Parts
+# Enumerations:
+# Procedures:
+#   ServoGroups(uint64 vessel) : KRPC.List
+#   ServoGroupWithName(uint64 vessel, string name) : uint64
+#   ServoWithName(uint64 vessel, string name) : uint64
+#   get_Available() : bool
+#   Servo_MoveRight(uint64 this)
+#   Servo_MoveLeft(uint64 this)
+#   Servo_MoveCenter(uint64 this)
+#   Servo_MoveNextPreset(uint64 this)
+#   Servo_MovePrevPreset(uint64 this)
+#   Servo_MoveTo(uint64 this, float position, float speed)
+#   Servo_Stop(uint64 this)
+#   Servo_get_Name(uint64 this) : string
+#   Servo_set_Name(uint64 this, string value)
+#   Servo_get_Part(uint64 this) : uint64
+#   Servo_set_Highlight(uint64 this, bool value)
+#   Servo_get_Position(uint64 this) : float
+#   Servo_get_MinConfigPosition(uint64 this) : float
+#   Servo_get_MaxConfigPosition(uint64 this) : float
+#   Servo_get_MinPosition(uint64 this) : float
+#   Servo_set_MinPosition(uint64 this, float value)
+#   Servo_get_MaxPosition(uint64 this) : float
+#   Servo_set_MaxPosition(uint64 this, float value)
+#   Servo_get_ConfigSpeed(uint64 this) : float
+#   Servo_get_Speed(uint64 this) : float
+#   Servo_set_Speed(uint64 this, float value)
+#   Servo_get_CurrentSpeed(uint64 this) : float
+#   Servo_set_CurrentSpeed(uint64 this, float value)
+#   Servo_get_Acceleration(uint64 this) : float
+#   Servo_set_Acceleration(uint64 this, float value)
+#   Servo_get_IsMoving(uint64 this) : bool
+#   Servo_get_IsFreeMoving(uint64 this) : bool
+#   Servo_get_IsLocked(uint64 this) : bool
+#   Servo_set_IsLocked(uint64 this, bool value)
+#   Servo_get_IsAxisInverted(uint64 this) : bool
+#   Servo_set_IsAxisInverted(uint64 this, bool value)
+#   ServoGroup_ServoWithName(uint64 this, string name) : uint64
+#   ServoGroup_MoveRight(uint64 this)
+#   ServoGroup_MoveLeft(uint64 this)
+#   ServoGroup_MoveCenter(uint64 this)
+#   ServoGroup_MoveNextPreset(uint64 this)
+#   ServoGroup_MovePrevPreset(uint64 this)
+#   ServoGroup_Stop(uint64 this)
+#   ServoGroup_get_Name(uint64 this) : string
+#   ServoGroup_set_Name(uint64 this, string value)
+#   ServoGroup_get_ForwardKey(uint64 this) : string
+#   ServoGroup_set_ForwardKey(uint64 this, string value)
+#   ServoGroup_get_ReverseKey(uint64 this) : string
+#   ServoGroup_set_ReverseKey(uint64 this, string value)
+#   ServoGroup_get_Speed(uint64 this) : float
+#   ServoGroup_set_Speed(uint64 this, float value)
+#   ServoGroup_get_Expanded(uint64 this) : bool
+#   ServoGroup_set_Expanded(uint64 this, bool value)
+#   ServoGroup_get_Servos(uint64 this) : KRPC.List
+#   ServoGroup_get_Parts(uint64 this) : KRPC.List
