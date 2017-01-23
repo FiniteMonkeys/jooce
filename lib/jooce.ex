@@ -160,11 +160,29 @@ defmodule Jooce do
     end
   end
 
-# AddStream
-# RemoveStream
-# get_Clients
-# get_CurrentGameScene
+  # AddStream
+  # RemoveStream
 
+  @doc ~S"""
+  Returns a list of connected clients.
+
+  Each item in the list is a tuple of
+  * byte[] containing the client's guid
+  * string containing the client's name
+  * string containing the client's IP address
+  """
+  def get_clients(conn) do
+    {:ok, return_value, _} = Jooce.Connection.call_rpc(conn, "KRPC", "get_Clients")
+    Enum.map(Jooce.Protobuf.List.decode(return_value).items, fn(x) -> extract_client_info(x) end)
+  end
+
+  def extract_client_info(item) do
+    [raw_guid, raw_name, raw_ip_address] = (Jooce.Protobuf.Tuple.decode(item)).items
+    <<_ :: size(8), guid :: binary>> = raw_guid
+    <<_ :: size(8), name :: binary>> = raw_name
+    <<_ :: size(8), ip_address :: binary>> = raw_ip_address
+    {guid, name, ip_address}
+  end
 
   @doc ~S"""
   Returns the current game scene.
@@ -184,7 +202,7 @@ defmodule Jooce do
       <<4>> ->
         :sph
       _ ->
-        nil
+        :unknown
     end
   end
 
