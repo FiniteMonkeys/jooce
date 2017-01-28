@@ -76,10 +76,6 @@ defmodule Jooce do
 
   https://krpc.github.io/krpc/communication-protocol.html#getservices
 
-  ## Examples
-
-      iex> Jooce.get_services
-
   """
   def get_services do
     {:ok, conn} = Jooce.Connection.start
