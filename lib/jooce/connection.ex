@@ -54,6 +54,38 @@ defmodule Jooce.Connection do
     end
   end
 
+  def call_rpc(conn, service, procedure, args) do
+    req = Jooce.Protobuf.Request.new(service: service, procedure: procedure, arguments: build_args(args))
+      |> Jooce.Protobuf.Request.encode
+    req_len = String.length(req) |> :gpb.encode_varint
+    Jooce.Connection.send(conn, req_len <> req)
+
+    {resp_len, _} = Jooce.Utils.read_varint(conn) |> :gpb.decode_varint
+    {:ok, resp} = Jooce.Connection.recv(conn, resp_len)
+
+    response = Jooce.Protobuf.Response.decode(resp)
+    cond do
+      response.has_error ->
+        {:error, response.error, response.time}
+      response.has_return_value ->
+        {:ok, response.return_value, response.time}
+      true ->
+        {:ok, nil, response.time}
+    end
+  end
+
+  def build_args(args) do
+    new_args = for {arg, i} <- Enum.with_index(args) do
+                 cond do
+                   {value, type, msg_defs} = arg ->
+                     Jooce.Protobuf.Argument.new(position: i, value: :gpb.encode_value(value, type, msg_defs))
+                   true ->
+                     nil
+                 end
+               end
+    Enum.reject(new_args, fn(x) -> x == nil end)
+  end
+
   ##
   ## callbacks
   ##
