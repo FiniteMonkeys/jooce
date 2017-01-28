@@ -30,6 +30,7 @@ defmodule Jooce.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [{:connection, "~> 1.0.4"},
-     {:exprotobuf, "~> 1.2.3"}]
+     {:exprotobuf, "~> 1.2.3"},
+     {:gpb, override: true, git: "git://github.com/CraigCottingham/gpb.git"}]
   end
 end
