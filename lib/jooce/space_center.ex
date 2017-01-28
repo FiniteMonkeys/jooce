@@ -1,3 +1,5 @@
+defmodule Jooce.SpaceCenter do
+
 # Enumerations:
 #   CameraMode
 #     0 = Automatic
@@ -105,7 +107,12 @@
 #     2 = None
 # Procedures:
 #   ClearTarget()
+
 #   LaunchableVessels(string craftDirectory) : KRPC.List
+def launchable_vessels(conn, craft_directory \\ "VAB") do
+  Jooce.Connection.call_rpc(conn, "SpaceCenter", "LaunchableVessels", [{craft_directory, :string, nil}])
+end
+
 #   LaunchVessel(string craftDirectory, string name, string launchSite)
 #   LaunchVesselFromVAB(string name)
 #   LaunchVesselFromSPH(string name)
@@ -119,7 +126,23 @@
 #   TransformDirection(KRPC.Tuple direction, uint64 from, uint64 to) : KRPC.Tuple
 #   TransformRotation(KRPC.Tuple rotation, uint64 from, uint64 to) : KRPC.Tuple
 #   TransformVelocity(KRPC.Tuple position, KRPC.Tuple velocity, uint64 from, uint64 to) : KRPC.Tuple
-#   get_ActiveVessel() : uint64
+
+  @doc ~S"""
+  Returns the ID of the active vessel.
+
+  ## RPC signature
+  get_ActiveVessel() : uint64
+  """
+  def active_vessel(conn) do
+    case Jooce.Connection.call_rpc(conn, "SpaceCenter", "get_ActiveVessel") do
+      {:ok, return_value, time} ->
+        {vessel_id, _} = :gpb.decode_varint(return_value)
+        {:ok, vessel_id, time}
+      {:error, _reason, _time} = error ->
+        error
+    end
+  end
+
 #   set_ActiveVessel(uint64 value)
 #   get_Vessels() : KRPC.List
 #   get_Bodies() : KRPC.Dictionary
@@ -803,3 +826,5 @@
 #   WaypointManager_get_Waypoints(uint64 this) : KRPC.List
 #   WaypointManager_get_Icons(uint64 this) : KRPC.List
 #   WaypointManager_get_Colors(uint64 this) : KRPC.Dictionary
+
+end
