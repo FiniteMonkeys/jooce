@@ -6,15 +6,15 @@ defmodule Jooce do
   @doc ~S"""
   Open a connection to a kRPC server.
   """
-  def start do
-    Jooce.Connection.start
+  def start(name \\ "Jooce") do
+    Jooce.Connection.start(name)
   end
 
   @doc ~S"""
   Open a connection to a kRPC server and links it to the current process.
   """
-  def start_link do
-    Jooce.Connection.start_link
+  def start_link(name \\ "Jooce") do
+    Jooce.Connection.start_link(name)
   end
 
   @doc ~S"""
