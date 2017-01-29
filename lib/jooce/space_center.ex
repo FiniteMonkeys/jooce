@@ -106,11 +106,58 @@ defmodule Jooce.SpaceCenter do
 #     1 = Physics
 #     2 = None
 # Procedures:
+
+@doc ~S"""
+Returns the ID of the active vessel.
+
+## RPC signature
+get_ActiveVessel() : uint64
+"""
+@spec active_vessel(pid) :: {atom, integer, integer}
+def active_vessel(conn) do
+  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "get_ActiveVessel") do
+    {:ok, return_value, time} ->
+      {vessel_id, _} = :gpb.decode_varint(return_value)
+      {:ok, vessel_id, time}
+    {:error, _reason, _time} = error ->
+      error
+  end
+end
+
+@doc ~S"""
+Sets the ID of the active vessel.
+
+## RPC signature
+set_ActiveVessel(uint64 value)
+"""
+def set_active_vessel(conn, vessel_id) do
+  Jooce.Connection.call_rpc(conn, "SpaceCenter", "set_ActiveVessel", [{vessel_id, :uint64, nil}])
+end
+
+#   get_Vessels() : KRPC.List
+#   get_Bodies() : KRPC.Dictionary
+#   get_TargetBody() : uint64
+#   set_TargetBody(uint64 value)
+#   get_TargetVessel() : uint64
+#   set_TargetVessel(uint64 value)
+#   get_TargetDockingPort() : uint64
+#   set_TargetDockingPort(uint64 value)
 #   ClearTarget()
 
-#   LaunchableVessels(string craftDirectory) : KRPC.List
+@doc ~S"""
+Returns a list of vessels from the given `craftDirectory` that can be launched.
+
+## RPC signature
+LaunchableVessels(string craftDirectory) : KRPC.List
+"""
 def launchable_vessels(conn, craft_directory \\ "VAB") do
-  Jooce.Connection.call_rpc(conn, "SpaceCenter", "LaunchableVessels", [{craft_directory, :string, nil}])
+  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "LaunchableVessels", [{craft_directory, :string, nil}]) do
+    {:ok, return_value, time} ->
+      list = for name <- Jooce.Protobuf.List.decode(return_value).items, into: [], do: :gpb.decode_type(:string, name, nil)
+      {:ok, list, time}
+    {:error, _reason, _time} = error ->
+      error
+  end
 end
 
 #   LaunchVessel(string craftDirectory, string name, string launchSite)
@@ -127,31 +174,6 @@ end
 #   TransformRotation(KRPC.Tuple rotation, uint64 from, uint64 to) : KRPC.Tuple
 #   TransformVelocity(KRPC.Tuple position, KRPC.Tuple velocity, uint64 from, uint64 to) : KRPC.Tuple
 
-  @doc ~S"""
-  Returns the ID of the active vessel.
-
-  ## RPC signature
-  get_ActiveVessel() : uint64
-  """
-  def active_vessel(conn) do
-    case Jooce.Connection.call_rpc(conn, "SpaceCenter", "get_ActiveVessel") do
-      {:ok, return_value, time} ->
-        {vessel_id, _} = :gpb.decode_varint(return_value)
-        {:ok, vessel_id, time}
-      {:error, _reason, _time} = error ->
-        error
-    end
-  end
-
-#   set_ActiveVessel(uint64 value)
-#   get_Vessels() : KRPC.List
-#   get_Bodies() : KRPC.Dictionary
-#   get_TargetBody() : uint64
-#   set_TargetBody(uint64 value)
-#   get_TargetVessel() : uint64
-#   set_TargetVessel(uint64 value)
-#   get_TargetDockingPort() : uint64
-#   set_TargetDockingPort(uint64 value)
 #   get_WaypointManager() : uint64
 #   get_Camera() : uint64
 #   get_UT() : double
@@ -165,8 +187,27 @@ end
 #   set_PhysicsWarpFactor(int32 value)
 #   get_MaximumRailsWarpFactor() : int32
 #   get_FARAvailable() : bool
-#   AutoPilot_Engage(uint64 this)
-#   AutoPilot_Disengage(uint64 this)
+
+@doc ~S"""
+Engage the auto-pilot.
+
+## RPC signature
+AutoPilot_Engage(uint64 this)
+"""
+def autopilot_engage(conn, autopilot_id) do
+  Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_Engage", [{autopilot_id, :uint64, nil}])
+end
+
+@doc ~S"""
+Disengage the auto-pilot.
+
+## RPC signature
+AutoPilot_Disengage(uint64 this)
+"""
+def autopilot_disengage(conn, autopilot_id) do
+  Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_Disengage", [{autopilot_id, :uint64, nil}])
+end
+
 #   AutoPilot_Wait(uint64 this)
 #   AutoPilot_TargetPitchAndHeading(uint64 this, float pitch, float heading)
 #   AutoPilot_get_Error(uint64 this) : float
@@ -175,10 +216,57 @@ end
 #   AutoPilot_get_RollError(uint64 this) : float
 #   AutoPilot_get_ReferenceFrame(uint64 this) : uint64
 #   AutoPilot_set_ReferenceFrame(uint64 this, uint64 value)
-#   AutoPilot_get_TargetPitch(uint64 this) : float
-#   AutoPilot_set_TargetPitch(uint64 this, float value)
-#   AutoPilot_get_TargetHeading(uint64 this) : float
-#   AutoPilot_set_TargetHeading(uint64 this, float value)
+
+@doc ~S"""
+Gets the target pitch angle, in degrees, between -90° and +90°.
+
+## RPC signature
+AutoPilot_get_TargetPitch(uint64 this) : float
+"""
+def autopilot_get_target_pitch(conn, autopilot_id) do
+  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_TargetPitch", [{autopilot_id, :uint64, nil}]) do
+    {:ok, return_value, time} ->
+      {:ok, :gpb.decode_type(:float, return_value, nil), time}
+    {:error, _reason, _time} = error ->
+      error
+  end
+end
+
+@doc ~S"""
+Sets the target pitch angle, in degrees, between -90° and +90°.
+
+## RPC signature
+AutoPilot_set_TargetPitch(uint64 this, float value)
+"""
+def autopilot_set_target_pitch(conn, autopilot_id, value) do
+  Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_set_TargetPitch", [{autopilot_id, :uint64, nil}, {value, :float, nil}])
+end
+
+@doc ~S"""
+Gets the target heading angle, in degrees, between 0° and 360°.
+
+## RPC signature
+AutoPilot_get_TargetHeading(uint64 this) : float
+"""
+def autopilot_get_target_heading(conn, autopilot_id) do
+  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_TargetHeading", [{autopilot_id, :uint64, nil}]) do
+    {:ok, return_value, time} ->
+      {:ok, :gpb.decode_type(:float, return_value, nil), time}
+    {:error, _reason, _time} = error ->
+      error
+  end
+end
+
+@doc ~S"""
+Sets the target heading angle, in degrees, between 0° and 360°.
+
+## RPC signature
+AutoPilot_set_TargetHeading(uint64 this, float value)
+"""
+def autopilot_set_target_heading(conn, autopilot_id, value) do
+  Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_set_TargetHeading", [{autopilot_id, :uint64, nil}, {value, :float, nil}])
+end
+
 #   AutoPilot_get_TargetRoll(uint64 this) : float
 #   AutoPilot_set_TargetRoll(uint64 this, float value)
 #   AutoPilot_get_TargetDirection(uint64 this) : KRPC.Tuple
@@ -256,7 +344,23 @@ end
 #   CelestialBody_get_ReferenceFrame(uint64 this) : uint64
 #   CelestialBody_get_NonRotatingReferenceFrame(uint64 this) : uint64
 #   CelestialBody_get_OrbitalReferenceFrame(uint64 this) : uint64
-#   Control_ActivateNextStage(uint64 this) : KRPC.List
+
+@doc ~S"""
+Activates the next stage. Equivalent to pressing the space bar in-game.
+
+## RPC signature
+Control_ActivateNextStage(uint64 this) : KRPC.List
+"""
+def control_activate_next_stage(conn, control_id) do
+  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Control_ActivateNextStage", [{control_id, :uint64, nil}]) do
+    {:ok, return_value, time} ->
+      list = for id <- Jooce.Protobuf.List.decode(return_value).items, into: [], do: :gpb.decode_type(:uint64, id, nil)
+      {:ok, list, time}
+    {:error, _reason, _time} = error ->
+      error
+  end
+end
+
 #   Control_GetActionGroup(uint64 this, uint32 group) : bool
 #   Control_SetActionGroup(uint64 this, uint32 group, bool state)
 #   Control_ToggleActionGroup(uint64 this, uint32 group)
@@ -278,8 +382,32 @@ end
 #   Control_set_Brakes(uint64 this, bool value)
 #   Control_get_Abort(uint64 this) : bool
 #   Control_set_Abort(uint64 this, bool value)
-#   Control_get_Throttle(uint64 this) : float
-#   Control_set_Throttle(uint64 this, float value)
+
+@doc ~S"""
+Gets the state of the throttle. A value between 0 and 1.
+
+## RPC signature
+Control_get_Throttle(uint64 this) : float
+"""
+def control_get_throttle(conn, control_id) do
+  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Control_get_Throttle", [{control_id, :uint64, nil}]) do
+    {:ok, return_value, time} ->
+      {:ok, :gpb.decode_type(:float, return_value, nil), time}
+    {:error, _reason, _time} = error ->
+      error
+  end
+end
+
+@doc ~S"""
+Sets the state of the throttle. A value between 0 and 1.
+
+## RPC signature
+Control_set_Throttle(uint64 this, float value)
+"""
+def control_set_throttle(conn, control_id, value) do
+  Jooce.Connection.call_rpc(conn, "SpaceCenter", "Control_set_Throttle", [{control_id, :uint64, nil}, {value, :float, nil}])
+end
+
 #   Control_get_Pitch(uint64 this) : float
 #   Control_set_Pitch(uint64 this, float value)
 #   Control_get_Yaw(uint64 this) : float
@@ -772,8 +900,41 @@ end
 #   Vessel_get_MET(uint64 this) : double
 #   Vessel_get_Biome(uint64 this) : string
 #   Vessel_get_Orbit(uint64 this) : uint64
-#   Vessel_get_Control(uint64 this) : uint64
-#   Vessel_get_AutoPilot(uint64 this) : uint64
+
+@doc ~S"""
+Returns a Control object that can be used to manipulate the vessel’s control inputs. For example, its pitch/yaw/roll controls, RCS and thrust.
+
+## RPC signature
+Vessel_get_Control(uint64 this) : uint64
+"""
+def vessel_get_control(conn, vessel_id) do
+  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Vessel_get_Control", [{vessel_id, :uint64, nil}]) do
+    {:ok, return_value, time} ->
+      {control_id, _} = :gpb.decode_type(:uint64, return_value, nil)
+      {:ok, control_id, time}
+    {:error, _reason, _time} = error ->
+      error
+  end
+end
+
+#
+
+@doc ~S"""
+Gets an AutoPilot object, that can be used to perform simple auto-piloting of the vessel.
+
+## RPC signature
+Vessel_get_AutoPilot(uint64 this) : uint64
+"""
+def vessel_get_autopilot(conn, vessel_id) do
+  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Vessel_get_AutoPilot", [{vessel_id, :uint64, nil}]) do
+    {:ok, return_value, time} ->
+      {autopilot_id, _} = :gpb.decode_type(:uint64, return_value, nil)
+      {:ok, autopilot_id, time}
+    {:error, _reason, _time} = error ->
+      error
+  end
+end
+
 #   Vessel_get_Resources(uint64 this) : uint64
 #   Vessel_get_Parts(uint64 this) : uint64
 #   Vessel_get_Mass(uint64 this) : float
