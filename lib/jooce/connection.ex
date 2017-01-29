@@ -75,7 +75,7 @@ defmodule Jooce.Connection do
   end
 
   def build_args(args) do
-    new_args = for {arg, i} <- Enum.with_index(args) do
+    new_args = for {arg, i} <- Enum.with_index(args), into: [] do
                  cond do
                    {value, type, msg_defs} = arg ->
                      Jooce.Protobuf.Argument.new(position: i, value: :gpb.encode_value(value, type, msg_defs))
