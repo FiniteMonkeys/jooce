@@ -226,7 +226,8 @@ AutoPilot_get_TargetPitch(uint64 this) : float
 def autopilot_get_target_pitch(conn, autopilot_id) do
   case Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_TargetPitch", [{autopilot_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
-      {:ok, :gpb.decode_type(:float, return_value, nil), time}
+      {target_pitch, _} = :gpb.decode_type(:float, return_value, nil)
+      {:ok, target_pitch, time}
     {:error, _reason, _time} = error ->
       error
   end
@@ -251,7 +252,8 @@ AutoPilot_get_TargetHeading(uint64 this) : float
 def autopilot_get_target_heading(conn, autopilot_id) do
   case Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_TargetHeading", [{autopilot_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
-      {:ok, :gpb.decode_type(:float, return_value, nil), time}
+      {target_heading, _} = :gpb.decode_type(:float, return_value, nil)
+      {:ok, target_heading, time}
     {:error, _reason, _time} = error ->
       error
   end
@@ -392,7 +394,8 @@ Control_get_Throttle(uint64 this) : float
 def control_get_throttle(conn, control_id) do
   case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Control_get_Throttle", [{control_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
-      {:ok, :gpb.decode_type(:float, return_value, nil), time}
+      {value, _} = :gpb.decode_type(:float, return_value, nil)
+      {:ok, value, time}
     {:error, _reason, _time} = error ->
       error
   end
