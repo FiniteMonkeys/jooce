@@ -93,14 +93,14 @@ defmodule SubOrbitalFlight do
 
   def descent_phase(state, _altitude) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, false)
-    {:ok, new_altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
+    {:ok, new_altitude, _} = Jooce.SpaceCenter.flight_get_surface_altitude(state.conn, state.flight_id)
     Process.sleep 100
     IO.puts "Reentry"
     reentry(state, new_altitude)
   end
 
   def reentry(state, altitude) when altitude > 6000 do
-    {:ok, new_altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
+    {:ok, new_altitude, _} = Jooce.SpaceCenter.flight_get_surface_altitude(state.conn, state.flight_id)
     Process.sleep 100
     reentry(state, new_altitude)
   end
