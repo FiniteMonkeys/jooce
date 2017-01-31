@@ -30,19 +30,18 @@ defmodule SubOrbitalFlight do
   def launch(state) do
     IO.puts "Launch"
     {:ok, _, _} = Jooce.SpaceCenter.control_activate_next_stage(state.conn, state.control_id)
-    IO.puts "Boost phase"
-    boost_phase(state, 0)
+    IO.puts "Ascent phase"
+    ascent_phase(state, 0)
   end
 
-  def boost_phase(state, altitude) when altitude < 500 do
+  def ascent_phase(state, altitude) when altitude < 500 do
     {:ok, new_altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
     Process.sleep 100
-    boost_phase(state, new_altitude)
+    ascent_phase(state, new_altitude)
   end
 
-  def boost_phase(state, _altitude) do
+  def ascent_phase(state, _altitude) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_pitch(state.conn, state.autopilot_id, 60.0)
-    IO.puts "Gravity turn"
     gravity_turn(state, 1)
   end
 
