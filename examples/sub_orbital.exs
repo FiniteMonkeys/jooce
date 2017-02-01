@@ -206,7 +206,7 @@ defmodule SubOrbital do
   def landing_phase(state, _altitude) do
     IO.puts("Landed")
     Jooce.stop(state.conn)
-    Kernel.exit(self())
+    # Kernel.exit(self())
   end
 end
 
