@@ -1,5 +1,9 @@
 defmodule SubOrbital do
 
+  ##
+  ## controllers
+  ##
+
   defmodule Flight do
     def start(state) do
       Task.start(fn -> loop(state) end)
@@ -9,18 +13,42 @@ defmodule SubOrbital do
       receive do
         {:altitude, :mean} ->
           {:ok, altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
+          GenEvent.notify(state.event_mgr, {:altitude, {:mean, altitude}})
           {:ok, altitude}
         {:altitude, :surface} ->
           {:ok, altitude, _} = Jooce.SpaceCenter.flight_get_surface_altitude(state.conn, state.flight_id)
+          GenEvent.notify(state.event_mgr, {:altitude, {:surface, altitude}})
           {:ok, altitude}
       after
         1_000 ->
           {:ok, altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
-          IO.puts altitude
+          GenEvent.notify(state.event_mgr, {:altitude, {:mean, altitude}})
       end
       loop(state)
     end
   end
+
+  ##
+  ## event handlers
+  ##
+
+  defmodule AltitudeHandler do
+    use GenEvent
+
+    def handle_event({:altitude, {:mean, altitude}}, state) do
+      IO.puts("Mean altitude: #{altitude}")
+      {:ok, state}
+    end
+
+    def handle_event({:altitude, {:surface, altitude}}, state) do
+      IO.puts("Surface altitude: #{altitude}")
+      {:ok, state}
+    end
+  end
+
+  ##
+  ## main body of script
+  ##
 
   def go do
     state = initialize() |> preflight
@@ -29,7 +57,7 @@ defmodule SubOrbital do
   end
 
   def initialize do
-    state = %{conn: nil, vessel_id: nil, autopilot_id: nil, control_id: nil, flight_id: nil, resources_id: nil}
+    state = %{conn: nil, vessel_id: nil, autopilot_id: nil, control_id: nil, flight_id: nil, resources_id: nil, event_mgr: nil}
 
     {:ok, conn} = Jooce.start_link("Sub Orbital Flight")
     {:ok, vessel_id, _} = Jooce.SpaceCenter.active_vessel(conn)
@@ -37,8 +65,18 @@ defmodule SubOrbital do
     {:ok, control_id, _} = Jooce.SpaceCenter.vessel_get_control(conn, vessel_id)
     {:ok, flight_id, _} = Jooce.SpaceCenter.vessel_get_flight(conn, vessel_id)
     {:ok, resources_id, _} = Jooce.SpaceCenter.vessel_get_resources(conn, vessel_id)
+    {:ok, event_mgr} = GenEvent.start_link
 
-    %{state | conn: conn, vessel_id: vessel_id, autopilot_id: autopilot_id, control_id: control_id, flight_id: flight_id, resources_id: resources_id}
+    GenEvent.add_handler(event_mgr, AltitudeHandler, [])
+
+    %{state | conn: conn,
+              vessel_id: vessel_id,
+              autopilot_id: autopilot_id,
+              control_id: control_id,
+              flight_id: flight_id,
+              resources_id: resources_id,
+              event_mgr: event_mgr
+    }
   end
 
   def preflight(state) do
