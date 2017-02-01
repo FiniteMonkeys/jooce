@@ -35,70 +35,11 @@ defmodule Jooce.Connection do
   end
 
   def call_rpc(conn, service, procedure) do
-    req = Jooce.Protobuf.Request.new(service: service, procedure: procedure)
-          |> Jooce.Protobuf.Request.encode
-    req_len = String.length(req) |> :gpb.encode_varint
-    Jooce.Connection.send(conn, req_len <> req)
-
-    {resp_len, _} = read_varint(conn) |> :gpb.decode_varint
-    {:ok, resp} = Jooce.Connection.recv(conn, resp_len)
-
-    response = Jooce.Protobuf.Response.decode(resp)
-    cond do
-      response.has_error ->
-        {:error, response.error, response.time}
-      response.has_return_value ->
-        {:ok, response.return_value, response.time}
-      true ->
-        {:ok, nil, response.time}
-    end
+    Connection.call(conn, {:call_rpc, service, procedure})
   end
 
   def call_rpc(conn, service, procedure, args) do
-    req = Jooce.Protobuf.Request.new(service: service, procedure: procedure, arguments: build_args(args))
-          |> Jooce.Protobuf.Request.encode
-    req_len = String.length(req) |> :gpb.encode_varint
-    Jooce.Connection.send(conn, req_len <> req)
-
-    {resp_len, _} = read_varint(conn) |> :gpb.decode_varint
-    {:ok, resp} = Jooce.Connection.recv(conn, resp_len)
-
-    response = Jooce.Protobuf.Response.decode(resp)
-    cond do
-      response.has_error ->
-        {:error, response.error, response.time}
-      response.has_return_value ->
-        {:ok, response.return_value, response.time}
-      true ->
-        {:ok, nil, response.time}
-    end
-  end
-
-  def build_args(args) do
-    new_args = for {arg, i} <- Enum.with_index(args), into: [] do
-                 cond do
-                   {value, type, msg_defs} = arg ->
-                     Jooce.Protobuf.Argument.new(position: i, value: :gpb.encode_value(value, type, msg_defs))
-                   true ->
-                     nil
-                 end
-               end
-    Enum.reject(new_args, fn(x) -> x == nil end)
-  end
-
-  @doc """
-  Reads a varint from a connection.
-
-  """
-  def read_varint(conn, buffer \\ <<>>) do
-    case Jooce.Connection.recv(conn, 1) do
-      {:ok, <<1 :: size(1), _ :: bitstring>> = byte} ->
-        read_varint(conn, buffer <> byte)
-      {:ok, <<0 :: size(1), _ :: size(7)>> = byte} ->
-        buffer <> byte
-      _ ->
-        buffer
-    end
+    Connection.call(conn, {:call_rpc, service, procedure, args})
   end
 
   ##
@@ -171,5 +112,72 @@ defmodule Jooce.Connection do
 
   def handle_call(:close, from, state) do
     {:disconnect, {:close, from}, state}
+  end
+
+  def handle_call({:call_rpc, service, procedure}, _, %{sock: sock} = state) do
+    req = Jooce.Protobuf.Request.new(service: service, procedure: procedure)
+          |> Jooce.Protobuf.Request.encode
+    req_len = String.length(req) |> :gpb.encode_varint
+    :gen_tcp.send(sock, req_len <> req)
+
+    {resp_len, _} = read_varint(sock) |> :gpb.decode_varint
+    {:ok, resp} = :gen_tcp.recv(sock, resp_len, 3000)
+
+    response = Jooce.Protobuf.Response.decode(resp)
+    cond do
+      response.has_error ->
+        {:reply, {:error, response.error, response.time}, state}
+      response.has_return_value ->
+        {:reply, {:ok, response.return_value, response.time}, state}
+      true ->
+        {:reply, {:ok, nil, response.time}, state}
+    end
+  end
+
+  def handle_call({:call_rpc, service, procedure, args}, _, %{sock: sock} = state) do
+    req = Jooce.Protobuf.Request.new(service: service, procedure: procedure, arguments: build_args(args))
+          |> Jooce.Protobuf.Request.encode
+    req_len = String.length(req) |> :gpb.encode_varint
+    :gen_tcp.send(sock, req_len <> req)
+
+    {resp_len, _} = read_varint(sock) |> :gpb.decode_varint
+    {:ok, resp} = :gen_tcp.recv(sock, resp_len, 3000)
+
+    response = Jooce.Protobuf.Response.decode(resp)
+    cond do
+      response.has_error ->
+        {:reply, {:error, response.error, response.time}, state}
+      response.has_return_value ->
+        {:reply, {:ok, response.return_value, response.time}, state}
+      true ->
+        {:reply, {:ok, nil, response.time}, state}
+    end
+  end
+
+  @doc """
+  Reads a varint from a connection.
+
+  """
+  def read_varint(sock, buffer \\ <<>>) do
+    case :gen_tcp.recv(sock, 1, 3000) do
+      {:ok, <<1 :: size(1), _ :: bitstring>> = byte} ->
+        read_varint(sock, buffer <> byte)
+      {:ok, <<0 :: size(1), _ :: size(7)>> = byte} ->
+        buffer <> byte
+      _ ->
+        buffer
+    end
+  end
+
+  def build_args(args) do
+    new_args = for {arg, i} <- Enum.with_index(args), into: [] do
+                 cond do
+                   {value, type, msg_defs} = arg ->
+                     Jooce.Protobuf.Argument.new(position: i, value: :gpb.encode_value(value, type, msg_defs))
+                   true ->
+                     nil
+                 end
+               end
+    Enum.reject(new_args, fn(x) -> x == nil end)
   end
 end
