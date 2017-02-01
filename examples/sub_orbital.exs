@@ -74,43 +74,52 @@ defmodule SubOrbital do
   ##
 
   def go do
-    state = initialize() |> preflight
+    state = initialize()
+    preflight state
     Process.sleep 100
     launch state
   end
 
   def initialize do
-    state = %{conn: nil, vessel_id: nil, autopilot_id: nil, control_id: nil, flight_id: nil, resources_id: nil, event_mgr: nil}
+    state = %{}
 
-    {:ok, conn} = Jooce.start_link("Sub Orbital Flight")
-    {:ok, vessel_id, _} = Jooce.SpaceCenter.active_vessel(conn)
-    {:ok, autopilot_id, _} = Jooce.SpaceCenter.vessel_get_autopilot(conn, vessel_id)
-    {:ok, control_id, _} = Jooce.SpaceCenter.vessel_get_control(conn, vessel_id)
-    {:ok, flight_id, _} = Jooce.SpaceCenter.vessel_get_flight(conn, vessel_id)
-    {:ok, resources_id, _} = Jooce.SpaceCenter.vessel_get_resources(conn, vessel_id)
     {:ok, event_mgr} = GenEvent.start_link
+    state = Map.put(state, :event_mgr, event_mgr)
 
-    GenEvent.add_handler(event_mgr, AltitudeHandler, [])
+    {:ok, conn} = Jooce.start_link("Sub Orbital")
+    state = Map.put(state, :conn, conn)
 
-    %{state | conn: conn,
-              vessel_id: vessel_id,
-              autopilot_id: autopilot_id,
-              control_id: control_id,
-              flight_id: flight_id,
-              resources_id: resources_id,
-              event_mgr: event_mgr
-    }
+    {:ok, vessel_id, _} = Jooce.SpaceCenter.active_vessel(conn)
+    state = Map.put(state, :vessel_id, vessel_id)
+
+    {:ok, autopilot_id, _} = Jooce.SpaceCenter.vessel_get_autopilot(conn, vessel_id)
+    state = Map.put(state, :autopilot_id, autopilot_id)
+
+    {:ok, control_id, _} = Jooce.SpaceCenter.vessel_get_control(conn, vessel_id)
+    state = Map.put(state, :control_id, control_id)
+
+    {:ok, flight_id, _} = Jooce.SpaceCenter.vessel_get_flight(conn, vessel_id)
+    state = Map.put(state, :flight_id, flight_id)
+
+    {:ok, resources_id, _} = Jooce.SpaceCenter.vessel_get_resources(conn, vessel_id)
+    state = Map.put(state, :resources_id, resources_id)
+
+    {:ok, flight_pid} = Flight.start(state)
+    state = Map.put(state, :flight_pid, flight_pid)
+
+    {:ok, resources_pid} = Resources.start(state)
+    state = Map.put(state, :resources_pid, resources_pid)
+
+    # GenEvent.add_handler(event_mgr, AltitudeHandler, [])
+
+    state
   end
 
   def preflight(state) do
-    {:ok, flight_pid} = Flight.start(state)
-
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_pitch(state.conn, state.autopilot_id, 90.0)
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_heading(state.conn, state.autopilot_id, 90.0)
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_engage(state.conn, state.autopilot_id)
     {:ok, _, _} = Jooce.SpaceCenter.control_set_throttle(state.conn, state.control_id, 1.0)
-
-    state
   end
 
   def launch(state) do
