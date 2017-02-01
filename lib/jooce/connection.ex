@@ -40,7 +40,7 @@ defmodule Jooce.Connection do
     req_len = String.length(req) |> :gpb.encode_varint
     Jooce.Connection.send(conn, req_len <> req)
 
-    {resp_len, _} = Jooce.Utils.read_varint(conn) |> :gpb.decode_varint
+    {resp_len, _} = read_varint(conn) |> :gpb.decode_varint
     {:ok, resp} = Jooce.Connection.recv(conn, resp_len)
 
     response = Jooce.Protobuf.Response.decode(resp)
@@ -56,11 +56,11 @@ defmodule Jooce.Connection do
 
   def call_rpc(conn, service, procedure, args) do
     req = Jooce.Protobuf.Request.new(service: service, procedure: procedure, arguments: build_args(args))
-      |> Jooce.Protobuf.Request.encode
+          |> Jooce.Protobuf.Request.encode
     req_len = String.length(req) |> :gpb.encode_varint
     Jooce.Connection.send(conn, req_len <> req)
 
-    {resp_len, _} = Jooce.Utils.read_varint(conn) |> :gpb.decode_varint
+    {resp_len, _} = read_varint(conn) |> :gpb.decode_varint
     {:ok, resp} = Jooce.Connection.recv(conn, resp_len)
 
     response = Jooce.Protobuf.Response.decode(resp)
@@ -84,6 +84,21 @@ defmodule Jooce.Connection do
                  end
                end
     Enum.reject(new_args, fn(x) -> x == nil end)
+  end
+
+  @doc """
+  Reads a varint from a connection.
+
+  """
+  def read_varint(conn, buffer \\ <<>>) do
+    case Jooce.Connection.recv(conn, 1) do
+      {:ok, <<1 :: size(1), _ :: bitstring>> = byte} ->
+        read_varint(conn, buffer <> byte)
+      {:ok, <<0 :: size(1), _ :: size(7)>> = byte} ->
+        buffer <> byte
+      _ ->
+        buffer
+    end
   end
 
   ##
