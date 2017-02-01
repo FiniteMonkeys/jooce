@@ -63,6 +63,10 @@ defmodule SubOrbital do
       IO.puts("Surface altitude: #{altitude}")
       {:ok, state}
     end
+
+    def handle_event({_, _}, state) do
+      {:ok, state}
+    end
   end
 
   ##
