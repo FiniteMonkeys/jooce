@@ -28,6 +28,25 @@ defmodule SubOrbital do
     end
   end
 
+  defmodule Resources do
+    def start(state) do
+      Task.start(fn -> loop(state) end)
+    end
+
+    defp loop(state) do
+      receive do
+        {:resources, :liquid_fuel} ->
+          {:ok, fuel, _} = Jooce.SpaceCenter.resources_amount(state.conn, state.resources_id, "LiquidFuel")
+          GenEvent.notify(state.event_mgr, {:resources, {:liquid_fuel, fuel}})
+          {:ok, fuel}
+      after
+        1_000 ->
+          {:ok, fuel, _} = Jooce.SpaceCenter.resources_amount(state.conn, state.resources_id, "LiquidFuel")
+          GenEvent.notify(state.event_mgr, {:resources, {:liquid_fuel, fuel}})
+      end
+    end
+  end
+
   ##
   ## event handlers
   ##
