@@ -1,4 +1,27 @@
-defmodule SubOrbitalFlight do
+defmodule SubOrbital do
+
+  defmodule Flight do
+    def start(state) do
+      Task.start(fn -> loop(state) end)
+    end
+
+    defp loop(state) do
+      receive do
+        {:altitude, :mean} ->
+          {:ok, altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
+          {:ok, altitude}
+        {:altitude, :surface} ->
+          {:ok, altitude, _} = Jooce.SpaceCenter.flight_get_surface_altitude(state.conn, state.flight_id)
+          {:ok, altitude}
+      after
+        1_000 ->
+          {:ok, altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
+          IO.puts altitude
+      end
+      loop(state)
+    end
+  end
+
   def go do
     state = initialize() |> preflight
     Process.sleep 100
@@ -19,6 +42,8 @@ defmodule SubOrbitalFlight do
   end
 
   def preflight(state) do
+    {:ok, flight_pid} = Flight.start(state)
+
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_pitch(state.conn, state.autopilot_id, 90.0)
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_heading(state.conn, state.autopilot_id, 90.0)
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_engage(state.conn, state.autopilot_id)
@@ -124,4 +149,4 @@ defmodule SubOrbitalFlight do
   end
 end
 
-SubOrbitalFlight.go
+SubOrbital.go
