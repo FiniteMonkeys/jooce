@@ -11,16 +11,16 @@ defmodule SubOrbital do
 
     defp loop(state) do
       receive do
-        {:altitude, :mean} ->
+        {:altitude, :mean, from} ->
           {:ok, altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
           GenEvent.notify(state.event_mgr, {:altitude, {:mean, altitude}})
-          {:ok, altitude}
-        {:altitude, :surface} ->
+          send from, {:ok, altitude}
+        {:altitude, :surface, from} ->
           {:ok, altitude, _} = Jooce.SpaceCenter.flight_get_surface_altitude(state.conn, state.flight_id)
           GenEvent.notify(state.event_mgr, {:altitude, {:surface, altitude}})
-          {:ok, altitude}
+          send from, {:ok, altitude}
       after
-        1_000 ->
+        100 ->
           {:ok, altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
           GenEvent.notify(state.event_mgr, {:altitude, {:mean, altitude}})
       end
@@ -35,15 +35,16 @@ defmodule SubOrbital do
 
     defp loop(state) do
       receive do
-        {:resources, :liquid_fuel} ->
+        {:resources, :liquid_fuel, from} ->
           {:ok, fuel, _} = Jooce.SpaceCenter.resources_amount(state.conn, state.resources_id, "LiquidFuel")
           GenEvent.notify(state.event_mgr, {:resources, {:liquid_fuel, fuel}})
-          {:ok, fuel}
+          send from, {:ok, fuel}
       after
-        1_000 ->
+        100 ->
           {:ok, fuel, _} = Jooce.SpaceCenter.resources_amount(state.conn, state.resources_id, "LiquidFuel")
           GenEvent.notify(state.event_mgr, {:resources, {:liquid_fuel, fuel}})
       end
+      loop(state)
     end
   end
 
@@ -125,97 +126,93 @@ defmodule SubOrbital do
   def launch(state) do
     IO.puts "Launch"
     {:ok, _, _} = Jooce.SpaceCenter.control_activate_next_stage(state.conn, state.control_id)
-    IO.puts "Ascent phase"
-    ascent_phase(state, 0)
+    ascent_phase(state)
   end
 
-  def ascent_phase(state, altitude) when altitude < 500 do
-    {:ok, new_altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
-    Process.sleep 100
-    ascent_phase(state, new_altitude)
-  end
-
-  def ascent_phase(state, _altitude) do
-    {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_pitch(state.conn, state.autopilot_id, 60.0)
-    gravity_turn(state, 1)
-  end
-
-  def gravity_turn(state, fuel) when fuel > 0.1 do
-    {:ok, new_fuel, _} = Jooce.SpaceCenter.resources_amount(state.conn, state.resources_id, "LiquidFuel")
-    Process.sleep 100
-    gravity_turn(state, new_fuel)
-  end
-
-  def gravity_turn(state, _fuel) do
-    IO.puts "Launch stage separation"
-    {:ok, _, _} = Jooce.SpaceCenter.control_set_throttle(state.conn, state.control_id, 0.0)
-    Process.sleep 100
-    {:ok, _, _} = Jooce.SpaceCenter.control_activate_next_stage(state.conn, state.control_id)
-    {:ok, _, _} = Jooce.SpaceCenter.autopilot_disengage(state.conn, state.autopilot_id)
-    IO.puts "Coast to apoapsis"
-    {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, true)
-    Process.sleep 100
-    {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas_mode(state.conn, state.autopilot_id, 2)   # prograde
-    coast_to_apoapsis(state, 0)
-  end
-
-  def coast_to_apoapsis(state, altitude) when altitude < 80000 do
-    {:ok, new_altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
-    Process.sleep 100
-    coast_to_apoapsis(state, new_altitude)
-  end
-
-  def coast_to_apoapsis(state, altitude) do
-    {:ok, new_altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
-    if new_altitude < altitude do
-      {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, true)
-      Process.sleep 100
-      {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas_mode(state.conn, state.autopilot_id, 3)   # retrograde
-      IO.puts "Descent phase"
-      descent_phase(state, new_altitude)
-    else
-      {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, false)
-      Process.sleep 100
-      coast_to_apoapsis(state, new_altitude)
+  def ascent_phase(state, altitude \\ 0) do
+    send state.flight_pid, {:altitude, :mean, self()}
+    receive do
+      {:ok, new_altitude} when new_altitude < 500 ->
+        ascent_phase(state, new_altitude)
+      {:ok, _} ->
+        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_pitch(state.conn, state.autopilot_id, 60.0)
+        gravity_turn(state)
+    after
+      100 ->
+        ascent_phase(state, altitude)
     end
   end
 
-  def descent_phase(state, altitude) when altitude > 60000 do
-    {:ok, new_altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
-    Process.sleep 100
-    descent_phase(state, new_altitude)
+  def gravity_turn(state) do
+    send state.resources_pid, {:resources, :liquid_fuel, self()}
+    receive do
+      {:ok, fuel} when fuel <= 0.1 ->
+        IO.puts "Launch stage separation"
+        {:ok, _, _} = Jooce.SpaceCenter.control_set_throttle(state.conn, state.control_id, 0.0)
+        Process.sleep 100
+        {:ok, _, _} = Jooce.SpaceCenter.control_activate_next_stage(state.conn, state.control_id)
+        {:ok, _, _} = Jooce.SpaceCenter.autopilot_disengage(state.conn, state.autopilot_id)
+        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, true)
+        Process.sleep 100
+        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas_mode(state.conn, state.autopilot_id, 2)   # prograde
+        coast_to_apoapsis(state)
+      {:ok, _} ->
+        gravity_turn(state)
+    after
+      100 ->
+        gravity_turn(state)
+    end
   end
 
-  def descent_phase(state, _altitude) do
-    {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, false)
-    {:ok, new_altitude, _} = Jooce.SpaceCenter.flight_get_surface_altitude(state.conn, state.flight_id)
-    Process.sleep 100
-    IO.puts "Reentry"
-    reentry(state, new_altitude)
+  def coast_to_apoapsis(state, altitude \\ 0) do
+    send state.flight_pid, {:altitude, :mean, self()}
+    receive do
+      {:ok, new_altitude} when new_altitude <= 80_000 ->
+        coast_to_apoapsis(state, new_altitude)
+      {:ok, new_altitude} when new_altitude < altitude ->
+        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, true)
+        Process.sleep 100
+        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas_mode(state.conn, state.autopilot_id, 3)   # retrograde
+        descent_phase(state, new_altitude)
+      {:ok, new_altitude} ->
+        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, false)
+        coast_to_apoapsis(state, new_altitude)
+    after
+      100 ->
+        coast_to_apoapsis(state, altitude)
+    end
   end
 
-  def reentry(state, altitude) when altitude > 6000 do
-    {:ok, new_altitude, _} = Jooce.SpaceCenter.flight_get_surface_altitude(state.conn, state.flight_id)
-    Process.sleep 100
-    reentry(state, new_altitude)
-  end
-
-  def reentry(state, altitude) do
-    {:ok, _, _} = Jooce.SpaceCenter.control_activate_next_stage(state.conn, state.control_id)
-    Process.sleep 100
-    landing_phase(state, altitude)
+  def descent_phase(state, altitude) do
+    send state.flight_pid, {:altitude, :mean, self()}
+    receive do
+      {:ok, new_altitude} when new_altitude > 60_000 ->
+        descent_phase(state, new_altitude)
+      {:ok, new_altitude} when new_altitude > 6_000 ->
+        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, false)
+        descent_phase(state, new_altitude)
+      {:ok, new_altitude} ->
+        IO.puts "Deploying parachute"
+        {:ok, _, _} = Jooce.SpaceCenter.control_activate_next_stage(state.conn, state.control_id)
+        landing_phase(state, new_altitude)
+    after
+      100 ->
+        descent_phase(state, altitude)
+    end
   end
 
   def landing_phase(state, altitude) when altitude > 0.1 do
-    {:ok, new_altitude, _} = Jooce.SpaceCenter.flight_get_surface_altitude(state.conn, state.flight_id)
-    Process.sleep 100
-    landing_phase(state, new_altitude)
-  end
-
-  def landing_phase(state, _altitude) do
-    IO.puts("Landed")
-    Jooce.stop(state.conn)
-    # Kernel.exit(self())
+    send state.flight_pid, {:altitude, :surface, self()}
+    receive do
+      {:ok, new_altitude} when new_altitude > 0.1 ->
+        landing_phase(state, new_altitude)
+      {:ok, _} ->
+        IO.puts("Landed")
+        Jooce.stop(state.conn)
+    after
+      100 ->
+        landing_phase(state, altitude)
+    end
   end
 end
 
