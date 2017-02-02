@@ -6,15 +6,15 @@ defmodule Jooce do
   @doc ~S"""
   Open a connection to a kRPC server.
   """
-  def start do
-    Jooce.Connection.start
+  def start(name \\ "Jooce") do
+    Jooce.Connection.start(name)
   end
 
   @doc ~S"""
   Open a connection to a kRPC server and links it to the current process.
   """
-  def start_link do
-    Jooce.Connection.start_link
+  def start_link(name \\ "Jooce") do
+    Jooce.Connection.start_link(name)
   end
 
   @doc ~S"""
@@ -92,9 +92,8 @@ defmodule Jooce do
   def puts_services(%Jooce.Protobuf.Services{services: services}, device \\ :stderr) do
     for service <- services do
       IO.puts device, service.name
-      # string documentation = 5;
+      # service.documentation
       # repeated Class classes = 3;
-      # repeated Enumeration enumerations = 4;
       IO.puts device, "  Enumerations:"
       puts_enumerations service.enumerations, device
       IO.puts device, "  Procedures:"
@@ -105,59 +104,31 @@ defmodule Jooce do
   end
 
   def puts_enumerations(enumerations, device) do
-    # %Jooce.Protobuf.Enumeration{
-    #   documentation: "<doc>\n<summary>\nFont style.\n</summary>\n</doc>",
-    #   name: "FontStyle",
-    #   values: [
-    #     %Jooce.Protobuf.EnumerationValue{
-    #       documentation: "<doc>\n<summary>\nNormal.\n</summary>\n</doc>",
-    #       name: "Normal",
-    #       value: 0
-    #     },
-    #     %Jooce.Protobuf.EnumerationValue{
-    #       documentation: "<doc>\n<summary>\nBold.\n</summary>\n</doc>",
-    #       name: "Bold",
-    #       value: 1
-    #     },
-    #     %Jooce.Protobuf.EnumerationValue{
-    #       documentation: "<doc>\n<summary>\nItalic.\n</summary>\n</doc>",
-    #       name: "Italic",
-    #       value: 2
-    #     },
-    #     %Jooce.Protobuf.EnumerationValue{
-    #       documentation: "<doc>\n<summary>\nBold and italic.\n</summary>\n</doc>",
-    #       name: "BoldAndItalic",
-    #       value: 3
-    #     }
-    #   ]
-    # }
     for enum <- enumerations do
       IO.puts device, "    #{enum.name}"
+      # enum.documentation
       for val <- enum.values do
         IO.puts device, "      #{val.value} = #{val.name}"
+        # val.documentation
       end
     end
   end
 
   def puts_procedures(procedures, device) do
-    # %Jooce.Protobuf.Procedure{
-    #   attributes: ["Class.Property.Set(Drawing.Text,Material)", "ParameterType(0).Class(Drawing.Text)"],
-    #   documentation: "<doc>\n<summary>\nMaterial used to render the object.\nCreates the material from a shader with the given name.\n</summary>\n</doc>",
-    #   has_return_type: false,
-    #   parameters: [
-    #     %Jooce.Protobuf.Parameter{default_value: "", has_default_value: false, name: "this", type: "uint64"},
-    #     %Jooce.Protobuf.Parameter{default_value: "", has_default_value: false, name: "value", type: "string"}
-    #   ],
-    #   return_type: ""
-    # }
-
     for procedure <- procedures do
-      IO.puts device, "    #{procedure.name}"
+      param_strs = Enum.map(procedure.parameters, fn(x) -> "#{x.type} #{x.name}" end)   # would be nice to have x.default_value in there
+      IO.write device, "    #{procedure.name}(#{Enum.join(param_strs, ", ")})"
+      if procedure.has_return_type do
+        IO.write device, " : #{procedure.return_type}"
+      end
+      IO.puts device, ""
+      # procedure.documentation
+      # procedure.attributes
     end
   end
 
-  # AddStream
-  # RemoveStream
+  # AddStream(KRPC.Request request) : uint32
+  # RemoveStream(uint32 id)
 
   @doc ~S"""
   Returns a list of connected clients.
