@@ -2,6 +2,7 @@ defmodule JooceConnectionTest do
   use ExUnit.Case
   doctest Jooce.Connection
 
+  @tag external: true
   test "procedural Erlang" do
     # assert 1 + 1 == 2
     IO.puts("connecting")
@@ -18,6 +19,7 @@ defmodule JooceConnectionTest do
     :ok = :gen_tcp.close(sock)
   end
 
+  @tag external: true
   test "procedural Elixir" do
     IO.puts("connecting")
     {:ok, conn} = Jooce.Connection.start_link
