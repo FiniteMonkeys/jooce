@@ -31,31 +31,6 @@ defmodule Jooce do
 
   https://krpc.github.io/krpc/communication-protocol.html#getstatus
 
-  ## Examples
-
-      iex> Jooce.get_status
-      %Jooce.Protobuf.Status{
-        adaptive_rate_control: true,
-        blocking_recv: true,
-        bytes_read: 1440,
-        bytes_read_rate: 0.0,
-        bytes_written: 1160,
-        bytes_written_rate: 0.0,
-        exec_time_per_rpc_update: 0.0,
-        max_time_per_update: 10000,
-        one_rpc_per_update: false,
-        poll_time_per_rpc_update: 0.0010014179861173034,
-        recv_timeout: 1000,
-        rpc_rate: 0.0,
-        rpcs_executed: 13,
-        stream_rpc_rate: 0.0,
-        stream_rpcs: 0,
-        stream_rpcs_executed: 0,
-        time_per_rpc_update: 0.0010170749155804515,
-        time_per_stream_update: 1.2727523426292464e-6,
-        version: "0.3.6"
-      }
-
   """
   def get_status do
     {:ok, conn} = Jooce.Connection.start
