@@ -4,6 +4,52 @@ defmodule SubOrbital do
   ## controllers
   ##
 
+  defmodule Autopilot do
+    def start(conn, vessel_id) do
+      {:ok, autopilot_id, _} = Jooce.SpaceCenter.vessel_get_autopilot(conn, vessel_id)
+      Task.start(fn -> loop(%{conn: conn, autopilot_id: autopilot_id}) end)
+    end
+
+    defp loop(state) do
+      receive do
+        {:heading, value} ->
+          {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_heading(state.conn, state.autopilot_id, value)
+        {:off} ->
+          {:ok, _, _} = Jooce.SpaceCenter.autopilot_disengage(state.conn, state.autopilot_id)
+        {:on} ->
+          {:ok, _, _} = Jooce.SpaceCenter.autopilot_engage(state.conn, state.autopilot_id)
+        {:pitch, value} ->
+          {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_pitch(state.conn, state.autopilot_id, value)
+        {:sas, :off} ->
+          {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, false)
+        {:sas, :on} ->
+          {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, true)
+        {:sas, :prograde} ->
+          {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas_mode(state.conn, state.autopilot_id, 2)
+        {:sas, :retrograde} ->
+          {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas_mode(state.conn, state.autopilot_id, 3)
+      end
+      loop(state)
+    end
+  end
+
+  defmodule Control do
+    def start(conn, vessel_id) do
+      {:ok, control_id, _} = Jooce.SpaceCenter.vessel_get_control(conn, vessel_id)
+      Task.start(fn -> loop(%{conn: conn, control_id: control_id}) end)
+    end
+
+    defp loop(state) do
+      receive do
+        {:throttle, value} ->
+          {:ok, _, _} = Jooce.SpaceCenter.control_set_throttle(state.conn, state.control_id, value)
+        {:stage} ->
+          {:ok, _, _} = Jooce.SpaceCenter.control_activate_next_stage(state.conn, state.control_id)
+      end
+      loop(state)
+    end
+  end
+
   defmodule Flight do
     def start(conn, vessel_id) do
       {:ok, flight_id, _} = Jooce.SpaceCenter.vessel_get_flight(conn, vessel_id)
@@ -44,39 +90,33 @@ defmodule SubOrbital do
   ##
 
   def go do
-    state = initialize()
+    state = initialize("Sub Orbital")
     preflight state
     Process.sleep 100
     launch state
   end
 
-  def initialize do
-    {:ok, conn} = Jooce.start_link("Sub Orbital")
+  def initialize(name) do
+    {:ok, conn} = Jooce.start_link(name)
     {:ok, vessel_id, _} = Jooce.SpaceCenter.active_vessel(conn)
-    {:ok, autopilot_id, _} = Jooce.SpaceCenter.vessel_get_autopilot(conn, vessel_id)
-    {:ok, control_id, _} = Jooce.SpaceCenter.vessel_get_control(conn, vessel_id)
-
-    state = %{conn: conn, vessel_id: vessel_id, autopilot_id: autopilot_id, control_id: control_id}
-
+    {:ok, autopilot_pid} = Autopilot.start(conn, vessel_id)
+    {:ok, control_pid} = Control.start(conn, vessel_id)
     {:ok, flight_pid} = Flight.start(conn, vessel_id)
-    state = Map.put(state, :flight_pid, flight_pid)
-
     {:ok, resources_pid} = Resources.start(conn, vessel_id)
-    state = Map.put(state, :resources_pid, resources_pid)
 
-    state
+    %{conn: conn, vessel_id: vessel_id, autopilot_pid: autopilot_pid, control_pid: control_pid, flight_pid: flight_pid, resources_pid: resources_pid}
   end
 
   def preflight(state) do
-    {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_pitch(state.conn, state.autopilot_id, 90.0)
-    {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_heading(state.conn, state.autopilot_id, 90.0)
-    {:ok, _, _} = Jooce.SpaceCenter.autopilot_engage(state.conn, state.autopilot_id)
-    {:ok, _, _} = Jooce.SpaceCenter.control_set_throttle(state.conn, state.control_id, 1.0)
+    send state.autopilot_pid, {:pitch, 90.0}
+    send state.autopilot_pid, {:heading, 90.0}
+    send state.autopilot_pid, {:on}
+    send state.control_pid, {:throttle, 1.0}
   end
 
   def launch(state) do
     IO.puts "Launch"
-    {:ok, _, _} = Jooce.SpaceCenter.control_activate_next_stage(state.conn, state.control_id)
+    send state.control_pid, {:stage}
     ascent_phase(state)
   end
 
@@ -86,7 +126,7 @@ defmodule SubOrbital do
       {:ok, new_altitude} when new_altitude < 500 ->
         ascent_phase(state, new_altitude)
       {:ok, _} ->
-        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_pitch(state.conn, state.autopilot_id, 60.0)
+        send state.autopilot_pid, {:pitch, 60.0}
         gravity_turn(state)
     after
       100 ->
@@ -99,13 +139,13 @@ defmodule SubOrbital do
     receive do
       {:ok, fuel} when fuel <= 0.1 ->
         IO.puts "Launch stage separation"
-        {:ok, _, _} = Jooce.SpaceCenter.control_set_throttle(state.conn, state.control_id, 0.0)
+        send state.control_pid, {:throttle, 0.0}
         Process.sleep 100
-        {:ok, _, _} = Jooce.SpaceCenter.control_activate_next_stage(state.conn, state.control_id)
-        {:ok, _, _} = Jooce.SpaceCenter.autopilot_disengage(state.conn, state.autopilot_id)
-        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, true)
+        send state.control_pid, {:stage}
+        send state.autopilot_pid, {:off}
+        send state.autopilot_pid, {:sas, :on}
         Process.sleep 100
-        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas_mode(state.conn, state.autopilot_id, 2)   # prograde
+        send state.autopilot_pid, {:sas, :prograde}
         coast_to_apoapsis(state)
       {:ok, _} ->
         gravity_turn(state)
@@ -121,12 +161,12 @@ defmodule SubOrbital do
       {:ok, new_altitude} when new_altitude <= 80_000 ->
         coast_to_apoapsis(state, new_altitude)
       {:ok, new_altitude} when new_altitude < altitude ->
-        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, true)
+        send state.autopilot_pid, {:sas, :on}
         Process.sleep 100
-        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas_mode(state.conn, state.autopilot_id, 3)   # retrograde
+        send state.autopilot_pid, {:sas, :retrograde}
         descent_phase(state, new_altitude)
       {:ok, new_altitude} ->
-        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, false)
+        send state.autopilot_pid, {:sas, :off}
         coast_to_apoapsis(state, new_altitude)
     after
       100 ->
@@ -140,11 +180,11 @@ defmodule SubOrbital do
       {:ok, new_altitude} when new_altitude > 60_000 ->
         descent_phase(state, new_altitude)
       {:ok, new_altitude} when new_altitude > 5_000 ->
-        {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, false)
+        send state.autopilot_pid, {:sas, :off}
         descent_phase(state, new_altitude)
       {:ok, new_altitude} ->
         IO.puts "Deploying parachute"
-        {:ok, _, _} = Jooce.SpaceCenter.control_activate_next_stage(state.conn, state.control_id)
+        send state.control_pid, {:stage}
         landing_phase(state, new_altitude)
     after
       100 ->
