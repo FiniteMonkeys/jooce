@@ -5,8 +5,9 @@ defmodule SubOrbital do
   ##
 
   defmodule Flight do
-    def start(state) do
-      Task.start(fn -> loop(state) end)
+    def start(conn, vessel_id) do
+      {:ok, flight_id, _} = Jooce.SpaceCenter.vessel_get_flight(conn, vessel_id)
+      Task.start(fn -> loop(%{conn: conn, flight_id: flight_id}) end)
     end
 
     defp loop(state) do
@@ -23,8 +24,9 @@ defmodule SubOrbital do
   end
 
   defmodule Resources do
-    def start(state) do
-      Task.start(fn -> loop(state) end)
+    def start(conn, vessel_id) do
+      {:ok, resources_id, _} = Jooce.SpaceCenter.vessel_get_resources(conn, vessel_id)
+      Task.start(fn -> loop(%{conn: conn, resources_id: resources_id}) end)
     end
 
     defp loop(state) do
@@ -49,36 +51,18 @@ defmodule SubOrbital do
   end
 
   def initialize do
-    state = %{}
-
-    {:ok, event_mgr} = GenEvent.start_link
-    state = Map.put(state, :event_mgr, event_mgr)
-
     {:ok, conn} = Jooce.start_link("Sub Orbital")
-    state = Map.put(state, :conn, conn)
-
     {:ok, vessel_id, _} = Jooce.SpaceCenter.active_vessel(conn)
-    state = Map.put(state, :vessel_id, vessel_id)
-
     {:ok, autopilot_id, _} = Jooce.SpaceCenter.vessel_get_autopilot(conn, vessel_id)
-    state = Map.put(state, :autopilot_id, autopilot_id)
-
     {:ok, control_id, _} = Jooce.SpaceCenter.vessel_get_control(conn, vessel_id)
-    state = Map.put(state, :control_id, control_id)
 
-    {:ok, flight_id, _} = Jooce.SpaceCenter.vessel_get_flight(conn, vessel_id)
-    state = Map.put(state, :flight_id, flight_id)
+    state = %{conn: conn, vessel_id: vessel_id, autopilot_id: autopilot_id, control_id: control_id}
 
-    {:ok, resources_id, _} = Jooce.SpaceCenter.vessel_get_resources(conn, vessel_id)
-    state = Map.put(state, :resources_id, resources_id)
-
-    {:ok, flight_pid} = Flight.start(state)
+    {:ok, flight_pid} = Flight.start(conn, vessel_id)
     state = Map.put(state, :flight_pid, flight_pid)
 
-    {:ok, resources_pid} = Resources.start(state)
+    {:ok, resources_pid} = Resources.start(conn, vessel_id)
     state = Map.put(state, :resources_pid, resources_pid)
-
-    # GenEvent.add_handler(event_mgr, AltitudeHandler, [])
 
     state
   end
