@@ -13,16 +13,10 @@ defmodule SubOrbital do
       receive do
         {:altitude, :mean, from} ->
           {:ok, altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
-          GenEvent.notify(state.event_mgr, {:altitude, {:mean, altitude}})
           send from, {:ok, altitude}
         {:altitude, :surface, from} ->
           {:ok, altitude, _} = Jooce.SpaceCenter.flight_get_surface_altitude(state.conn, state.flight_id)
-          GenEvent.notify(state.event_mgr, {:altitude, {:surface, altitude}})
           send from, {:ok, altitude}
-      after
-        100 ->
-          {:ok, altitude, _} = Jooce.SpaceCenter.flight_get_mean_altitude(state.conn, state.flight_id)
-          GenEvent.notify(state.event_mgr, {:altitude, {:mean, altitude}})
       end
       loop(state)
     end
@@ -37,36 +31,9 @@ defmodule SubOrbital do
       receive do
         {:resources, :liquid_fuel, from} ->
           {:ok, fuel, _} = Jooce.SpaceCenter.resources_amount(state.conn, state.resources_id, "LiquidFuel")
-          GenEvent.notify(state.event_mgr, {:resources, {:liquid_fuel, fuel}})
           send from, {:ok, fuel}
-      after
-        100 ->
-          {:ok, fuel, _} = Jooce.SpaceCenter.resources_amount(state.conn, state.resources_id, "LiquidFuel")
-          GenEvent.notify(state.event_mgr, {:resources, {:liquid_fuel, fuel}})
       end
       loop(state)
-    end
-  end
-
-  ##
-  ## event handlers
-  ##
-
-  defmodule AltitudeHandler do
-    use GenEvent
-
-    def handle_event({:altitude, {:mean, altitude}}, state) do
-      IO.puts("Mean altitude: #{altitude}")
-      {:ok, state}
-    end
-
-    def handle_event({:altitude, {:surface, altitude}}, state) do
-      IO.puts("Surface altitude: #{altitude}")
-      {:ok, state}
-    end
-
-    def handle_event({_, _}, state) do
-      {:ok, state}
     end
   end
 
