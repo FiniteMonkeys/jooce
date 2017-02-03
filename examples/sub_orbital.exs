@@ -155,7 +155,7 @@ defmodule SubOrbital do
     receive do
       {:ok, new_altitude} when new_altitude > 60_000 ->
         descent_phase(state, new_altitude)
-      {:ok, new_altitude} when new_altitude > 6_000 ->
+      {:ok, new_altitude} when new_altitude > 5_000 ->
         {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, false)
         descent_phase(state, new_altitude)
       {:ok, new_altitude} ->
