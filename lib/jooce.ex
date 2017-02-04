@@ -11,7 +11,7 @@ defmodule Jooce do
   end
 
   @doc ~S"""
-  Open a connection to a kRPC server and links it to the current process.
+  Open a connection to a kRPC server and link it to the current process.
   """
   def start_link(name \\ "Jooce") do
     Jooce.Connection.start_link(name)
@@ -25,12 +25,10 @@ defmodule Jooce do
   end
 
   @doc ~S"""
-  Returns status information about the server.
+  Returns some information about the server, such as the version.
 
-  ## Reference
-
-  https://krpc.github.io/krpc/communication-protocol.html#getstatus
-
+  ## RPC signature
+  GetStatus() : KRPC.Status
   """
   def get_status do
     {:ok, conn} = Jooce.Connection.start
@@ -45,12 +43,11 @@ defmodule Jooce do
   end
 
   @doc ~S"""
-  Returns a list of all services.
+  Returns information on all services, procedures, classes, properties etc. provided by the server.
+  Can be used by client libraries to automatically create functionality such as stubs.
 
-  ## Reference
-
-  https://krpc.github.io/krpc/communication-protocol.html#getservices
-
+  ## RPC signature
+  GetServices() : KRPC.Services
   """
   def get_services do
     {:ok, conn} = Jooce.Connection.start
@@ -64,71 +61,47 @@ defmodule Jooce do
     Jooce.Protobuf.Services.decode(return_value)
   end
 
-  def puts_services(%Jooce.Protobuf.Services{services: services}, device \\ :stderr) do
-    for service <- services do
-      IO.puts device, service.name
-      # service.documentation
-      # repeated Class classes = 3;
-      IO.puts device, "  Enumerations:"
-      puts_enumerations service.enumerations, device
-      IO.puts device, "  Procedures:"
-      puts_procedures service.procedures, device
-
-      IO.puts device, ""
-    end
+  def describe_services(%Jooce.Protobuf.Services{services: services}, device \\ :stderr) do
+    for service <- services, do: describe_service(service, device)
   end
-
-  def puts_enumerations(enumerations, device) do
-    for enum <- enumerations do
-      IO.puts device, "    #{enum.name}"
-      # enum.documentation
-      for val <- enum.values do
-        IO.puts device, "      #{val.value} = #{val.name}"
-        # val.documentation
-      end
-    end
-  end
-
-  def puts_procedures(procedures, device) do
-    for procedure <- procedures do
-      param_strs = Enum.map(procedure.parameters, fn(x) -> "#{x.type} #{x.name}" end)   # would be nice to have x.default_value in there
-      IO.write device, "    #{procedure.name}(#{Enum.join(param_strs, ", ")})"
-      if procedure.has_return_type do
-        IO.write device, " : #{procedure.return_type}"
-      end
-      IO.puts device, ""
-      # procedure.documentation
-      # procedure.attributes
-    end
-  end
-
-  # AddStream(KRPC.Request request) : uint32
-  # RemoveStream(uint32 id)
 
   @doc ~S"""
-  Returns a list of connected clients.
+  Add a streaming request and return its identifier.
 
-  Each item in the list is a tuple of
-  * byte[] containing the client's guid
-  * string containing the client's name
-  * string containing the client's IP address
+  ## RPC signature
+  AddStream(KRPC.Request request) : uint32
+  """
+  def add_stream do
+
+  end
+
+  @doc ~S"""
+  Remove a streaming request.
+
+  ## RPC signature
+  RemoveStream(uint32 id)
+  """
+  def remove_stream do
+
+  end
+
+  @doc ~S"""
+  A list of RPC clients that are currently connected to the server.
+  Each entry in the list is a clients identifier, name and address.
+
+  ## RPC signature
+  get_Clients() : KRPC.List
   """
   def get_clients(conn) do
     {:ok, return_value, _} = Jooce.Connection.call_rpc(conn, "KRPC", "get_Clients")
     Enum.map(Jooce.Protobuf.List.decode(return_value).items, fn(x) -> extract_client_info(x) end)
   end
 
-  def extract_client_info(item) do
-    [raw_guid, raw_name, raw_ip_address] = (Jooce.Protobuf.Tuple.decode(item)).items
-    <<_ :: size(8), guid :: binary>> = raw_guid
-    <<_ :: size(8), name :: binary>> = raw_name
-    <<_ :: size(8), ip_address :: binary>> = raw_ip_address
-    {guid, name, ip_address}
-  end
-
   @doc ~S"""
-  Returns the current game scene.
+  Get the current game scene.
 
+  ## RPC signature
+  get_CurrentGameScene() : int32
   """
   def get_current_scene(conn) do
     {:ok, return_value, _} = Jooce.Connection.call_rpc(conn, "KRPC", "get_CurrentGameScene")
@@ -143,9 +116,79 @@ defmodule Jooce do
         :vab
       <<4>> ->
         :sph
-      _ ->
-        :unknown
     end
+  end
+
+  ##
+  ## private functions
+  ##
+
+  defp extract_client_info(item) do
+    IO.puts(inspect item)
+    [raw_guid, raw_name, raw_ip_address] = (Jooce.Protobuf.Tuple.decode(item)).items
+    <<_ :: size(8), guid :: binary>> = raw_guid
+    <<_ :: size(8), name :: binary>> = raw_name
+    <<_ :: size(8), ip_address :: binary>> = raw_ip_address
+    {guid, name, ip_address}
+  end
+
+  def describe_service(%{name: "KRPC"} = service, device) do
+    IO.puts device, "defmodule Jooce.#{service.name} do"
+    # IO.puts device, (inspect service)
+    describe_module_doc(service.documentation, device)
+    # service.classes
+    # service.enumerations
+    # service.procedures
+    describe_procedures(service.procedures, device)
+
+    IO.puts device, "end"
+  end
+
+  def describe_service(_service, _device) do
+
+  end
+
+  def describe_module_doc(documentation, device) do
+    IO.puts device, ~s(  @moduledoc ~S""")
+    for line <- String.split(documentation, "\n", trim: true) do
+      IO.puts device, "  #{line}"
+    end
+    IO.puts device, ~s(  """)
+  end
+
+  # def describe_enumerations(enumerations, device) do
+  #   for enum <- enumerations do
+  #     IO.puts device, "    #{enum.name}"
+  #     # enum.documentation
+  #     for val <- enum.values do
+  #       IO.puts device, "      #{val.value} = #{val.name}"
+  #       # val.documentation
+  #     end
+  #   end
+  # end
+
+  def describe_procedures(procedures, device) do
+    for procedure <- procedures, do: describe_procedure(procedure, device)
+  end
+
+  def describe_procedure(procedure, device) do
+    IO.puts device, ~s(\n  @doc ~S""")
+    # IO.puts device, (inspect procedure)
+    for line <- String.split(procedure.documentation, "\n", trim: true) do
+      IO.puts device, "  #{line}"
+    end
+    IO.puts device, ~s(\n  ## RPC signature)
+    IO.write device, "  #{procedure.name}(#{Enum.join(Enum.map(procedure.parameters, fn(x) -> "#{x.type} #{x.name}" end), ", ")})"
+    if procedure.has_return_type do
+      IO.write device, " : #{procedure.return_type}"
+    end
+    IO.puts device, ""
+    # procedure.attributes
+    # procedure.has_return_type
+    # procedure.name
+    # procedure.parameters
+    # procedure.return_type
+    IO.puts device, ~s(  """)
   end
 
 end
