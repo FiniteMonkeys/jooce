@@ -1,4 +1,4 @@
 language: elixir
 elixir:
   - 1.4.1
-script: mix test --exclude external
+script: mix espec --exclude requires_server
