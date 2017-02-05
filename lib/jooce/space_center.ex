@@ -227,8 +227,8 @@ AutoPilot_get_TargetPitch(uint64 this) : float
 def autopilot_get_target_pitch(conn, autopilot_id) do
   case Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_TargetPitch", [{autopilot_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
-      {target_pitch, _} = :gpb.decode_type(:float, return_value, nil)
-      {:ok, target_pitch, time}
+      {value, _} = :gpb.decode_type(:float, return_value, nil)
+      {:ok, value, time}
     {:error, _reason, _time} = error ->
       error
   end
@@ -253,8 +253,8 @@ AutoPilot_get_TargetHeading(uint64 this) : float
 def autopilot_get_target_heading(conn, autopilot_id) do
   case Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_TargetHeading", [{autopilot_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
-      {target_heading, _} = :gpb.decode_type(:float, return_value, nil)
-      {:ok, target_heading, time}
+      {value, _} = :gpb.decode_type(:float, return_value, nil)
+      {:ok, value, time}
     {:error, _reason, _time} = error ->
       error
   end
@@ -270,8 +270,32 @@ def autopilot_set_target_heading(conn, autopilot_id, value) do
   Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_set_TargetHeading", [{autopilot_id, :uint64, nil}, {value, :float, nil}])
 end
 
-#   AutoPilot_get_TargetRoll(uint64 this) : float
-#   AutoPilot_set_TargetRoll(uint64 this, float value)
+@doc ~S"""
+Gets the target roll angle, in degrees, between 0° and 360°.
+
+## RPC signature
+AutoPilot_get_TargetRoll(uint64 this) : float
+"""
+def autopilot_get_target_roll(conn, autopilot_id) do
+  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_TargetRoll", [{autopilot_id, :uint64, nil}]) do
+    {:ok, return_value, time} ->
+      {value, _} = :gpb.decode_type(:float, return_value, nil)
+      {:ok, value, time}
+    {:error, _reason, _time} = error ->
+      error
+  end
+end
+
+@doc ~S"""
+Sets the target roll angle, in degrees, between 0° and 360°.
+
+## RPC signature
+AutoPilot_set_TargetRoll(uint64 this, float value)
+"""
+def autopilot_set_target_roll(conn, autopilot_id, value) do
+  Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_set_TargetRoll", [{autopilot_id, :uint64, nil}, {value, :float, nil}])
+end
+
 #   AutoPilot_get_TargetDirection(uint64 this) : KRPC.Tuple
 #   AutoPilot_set_TargetDirection(uint64 this, KRPC.Tuple value)
 
