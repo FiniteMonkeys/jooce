@@ -19,6 +19,7 @@ defmodule Orbital do
   def preflight(state) do
     Jooce.Controller.Autopilot.pitch(state.autopilot_pid, 90.0)
     Jooce.Controller.Autopilot.heading(state.autopilot_pid, 90.0)
+    Jooce.Controller.Autopilot.roll(state.autopilot_pid, 0.0)
     Jooce.Controller.Autopilot.on(state.autopilot_pid)
     Jooce.Controller.Control.throttle(state.control_pid, 1.0)
   end
@@ -46,15 +47,12 @@ defmodule Orbital do
       fuel <= 0.1 ->
         IO.puts "Launch stage separation"
         Jooce.Controller.Control.throttle(state.control_pid, 0.0)
-        Process.sleep 100
         Jooce.Controller.Control.stage(state.control_pid)
         Jooce.Controller.Autopilot.off(state.autopilot_pid)
         Jooce.Controller.Autopilot.sas_on(state.autopilot_pid)
-        Process.sleep 100
         Jooce.Controller.Autopilot.sas_mode(state.autopilot_pid, :prograde)
         coast_to_apoapsis(state)
       true ->
-        # IO.puts "Fuel: #{fuel}"
         gravity_turn(state)
     end
   end
@@ -88,6 +86,8 @@ defmodule Orbital do
         Jooce.Controller.Autopilot.sas_on(state.autopilot_pid)
         Process.sleep 100
         Jooce.Controller.Autopilot.sas_mode(state.autopilot_pid, :retrograde)
+        # Process.sleep 100
+        # Jooce.Controller.Autopilot.roll(state.autopilot_pid, 0.0)
         descent_phase(state)
       true ->
         Jooce.Controller.Autopilot.sas_off(state.autopilot_pid)
@@ -96,6 +96,7 @@ defmodule Orbital do
   end
 
   def descent_phase(state) do
+    altitude = Jooce.Monitor.Flight.mean_altitude(state.flight_pid)
     cond do
       altitude > 60_000 ->
         descent_phase(state)
