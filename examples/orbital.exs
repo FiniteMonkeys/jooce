@@ -1,4 +1,23 @@
 defmodule Orbital do
+  defmodule StageOnMECO do
+    use GenEvent
+
+    def handle_event({:amount, :liquid_fuel, amount}, state) when amount <= 0.1 do
+      IO.puts "MECO"
+      Jooce.Monitor.Resources.remove_handler(state.resources_pid, Orbital.StageOnMECO, state)
+      {:ok, state}
+    end
+
+    def handle_event({:amount, :liquid_fuel, amount}, state) do
+      # IO.puts amount
+      {:ok, state}
+    end
+
+    def handle_event(_, state) do
+      {:ok, state}
+    end
+  end
+
   def go do
     state = initialize("Orbital")
     preflight state
@@ -12,6 +31,8 @@ defmodule Orbital do
     {:ok, control_pid} = Jooce.Controller.Control.start_link(conn, vessel_id)
     {:ok, flight_pid} = Jooce.Monitor.Flight.start_link(conn, vessel_id)
     {:ok, resources_pid} = Jooce.Monitor.Resources.start(conn, vessel_id)
+
+    Jooce.Monitor.Resources.add_handler(resources_pid, Orbital.StageOnMECO, %{resources_pid: resources_pid})
 
     %{conn: conn, vessel_id: vessel_id, autopilot_pid: autopilot_pid, control_pid: control_pid, flight_pid: flight_pid, resources_pid: resources_pid}
   end
