@@ -2,7 +2,6 @@ defmodule Orbital do
   def go do
     state = initialize("Orbital")
     preflight state
-    Process.sleep 100
     launch state
   end
 
@@ -11,8 +10,8 @@ defmodule Orbital do
     {:ok, vessel_id, _} = Jooce.SpaceCenter.active_vessel(conn)
     {:ok, autopilot_pid} = Jooce.Controller.Autopilot.start_link(conn, vessel_id)
     {:ok, control_pid} = Jooce.Controller.Control.start_link(conn, vessel_id)
-    {:ok, flight_pid} = Jooce.Controller.Flight.start_link(conn, vessel_id)
-    {:ok, resources_pid} = Jooce.Controller.Resources.start(conn, vessel_id)
+    {:ok, flight_pid} = Jooce.Monitor.Flight.start_link(conn, vessel_id)
+    {:ok, resources_pid} = Jooce.Monitor.Resources.start(conn, vessel_id)
 
     %{conn: conn, vessel_id: vessel_id, autopilot_pid: autopilot_pid, control_pid: control_pid, flight_pid: flight_pid, resources_pid: resources_pid}
   end
@@ -31,7 +30,7 @@ defmodule Orbital do
   end
 
   def ascent_phase(state) do
-    altitude = Jooce.Controller.Flight.surface_altitude(state.flight_pid)
+    altitude = Jooce.Monitor.Flight.surface_altitude(state.flight_pid)
     cond do
       altitude < 500 ->
         ascent_phase(state)
@@ -42,7 +41,7 @@ defmodule Orbital do
   end
 
   def gravity_turn(state) do
-    fuel = Jooce.Controller.Resources.liquid_fuel(state.resources_pid)
+    fuel = Jooce.Monitor.Resources.liquid_fuel(state.resources_pid)
     cond do
       fuel <= 0.1 ->
         IO.puts "Launch stage separation"
@@ -81,7 +80,7 @@ defmodule Orbital do
   # end
 
   def coast_to_apoapsis(state, altitude \\ 0) do
-    new_altitude = Jooce.Controller.Flight.mean_altitude(state.flight_pid)
+    new_altitude = Jooce.Monitor.Flight.mean_altitude(state.flight_pid)
     cond do
       new_altitude <= 80_000 ->
         coast_to_apoapsis(state, new_altitude)
@@ -97,7 +96,6 @@ defmodule Orbital do
   end
 
   def descent_phase(state) do
-    altitude = Jooce.Controller.Flight.mean_altitude(state.flight_pid)
     cond do
       altitude > 60_000 ->
         descent_phase(state)
@@ -112,7 +110,7 @@ defmodule Orbital do
   end
 
   def landing_phase(state) do
-    altitude = Jooce.Controller.Flight.surface_altitude(state.flight_pid)
+    altitude = Jooce.Monitor.Flight.surface_altitude(state.flight_pid)
     cond do
       altitude > 0.1 ->
         landing_phase(state)
