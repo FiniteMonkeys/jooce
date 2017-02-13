@@ -210,7 +210,17 @@ def autopilot_disengage(conn, autopilot_id) do
 end
 
 #   AutoPilot_Wait(uint64 this)
-#   AutoPilot_TargetPitchAndHeading(uint64 this, float pitch, float heading)
+
+@doc ~S"""
+Set target pitch and heading angles.
+
+## RPC signature
+AutoPilot_TargetPitchAndHeading(uint64 this, float pitch, float heading)
+"""
+def autopilot_set_target_pitch_and_heading(conn, autopilot_id, pitch, heading) do
+  Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_TargetPitchAndHeading", [{autopilot_id, :uint64, nil}, {pitch, :float, nil}, {heading, :float, nil}])
+end
+
 #   AutoPilot_get_Error(uint64 this) : float
 #   AutoPilot_get_PitchError(uint64 this) : float
 #   AutoPilot_get_HeadingError(uint64 this) : float
