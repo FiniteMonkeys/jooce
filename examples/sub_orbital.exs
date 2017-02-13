@@ -90,7 +90,7 @@ defmodule SubOrbital do
   ##
 
   def go do
-    state = initialize("Sub Orbital")
+    state = initialize("sub_orbital.exs")
     preflight state
     Process.sleep 100
     launch state
