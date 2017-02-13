@@ -9,7 +9,7 @@ defmodule Simple do
   def initialize do
     state = %{conn: nil, vessel_id: nil, autopilot_id: nil, control_id: nil, flight_id: nil, resources_id: nil}
 
-    {:ok, conn} = Jooce.start_link("Sub Orbital Flight")
+    {:ok, conn} = Jooce.start_link("simple.exs")
     {:ok, vessel_id, _} = Jooce.SpaceCenter.active_vessel(conn)
     {:ok, autopilot_id, _} = Jooce.SpaceCenter.vessel_get_autopilot(conn, vessel_id)
     {:ok, control_id, _} = Jooce.SpaceCenter.vessel_get_control(conn, vessel_id)
@@ -121,7 +121,6 @@ defmodule Simple do
   def landing_phase(state, _altitude) do
     IO.puts("Landed")
     Jooce.stop(state.conn)
-    Kernel.exit(self())
   end
 end
 
