@@ -39,6 +39,10 @@ defmodule Jooce.Controller.Autopilot do
 
   ## attitude
 
+  def pitch_and_heading(pid, pitch, heading) do
+    GenServer.cast(pid, {:pitch_and_heading, pitch, heading})
+  end
+
   def heading(pid, value) do
     GenServer.cast(pid, {:heading, value})
   end
@@ -87,6 +91,11 @@ defmodule Jooce.Controller.Autopilot do
 
   def handle_cast({:sas_mode, :retrograde}, state) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas_mode(state.conn, state.autopilot_id, 3)
+    {:noreply, state}
+  end
+
+  def handle_cast({:pitch_and_heading, pitch, heading}, state) do
+    {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_pitch_and_heading(state.conn, state.autopilot_id, pitch, heading)
     {:noreply, state}
   end
 
