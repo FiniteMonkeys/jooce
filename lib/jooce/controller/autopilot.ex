@@ -16,43 +16,43 @@ defmodule Jooce.Controller.Autopilot do
   ## autopilot enable/disable
 
   def on(pid) do
-    GenServer.cast(pid, :on)
+    GenServer.call(pid, :on)
   end
 
   def off(pid) do
-    GenServer.cast(pid, :off)
+    GenServer.call(pid, :off)
   end
 
   ## SAS enable/disable
 
   def sas_on(pid) do
-    GenServer.cast(pid, :sas_on)
+    GenServer.call(pid, :sas_on)
   end
 
   def sas_off(pid) do
-    GenServer.cast(pid, :sas_off)
+    GenServer.call(pid, :sas_off)
   end
 
   def sas_mode(pid, mode) do
-    GenServer.cast(pid, {:sas_mode, mode})
+    GenServer.call(pid, {:sas_mode, mode})
   end
 
   ## attitude
 
   def pitch_and_heading(pid, pitch, heading) do
-    GenServer.cast(pid, {:pitch_and_heading, pitch, heading})
+    GenServer.call(pid, {:pitch_and_heading, pitch, heading})
   end
 
   def heading(pid, value) do
-    GenServer.cast(pid, {:heading, value})
+    GenServer.call(pid, {:heading, value})
   end
 
   def pitch(pid, value) do
-    GenServer.cast(pid, {:pitch, value})
+    GenServer.call(pid, {:pitch, value})
   end
 
   def roll(pid, value) do
-    GenServer.cast(pid, {:roll, value})
+    GenServer.call(pid, {:roll, value})
   end
 
   ##
@@ -64,57 +64,57 @@ defmodule Jooce.Controller.Autopilot do
     {:ok, %{conn: conn, autopilot_id: autopilot_id}}
   end
 
-  def handle_cast(:on, state) do
+  def handle_call(:on, _from, state) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_engage(state.conn, state.autopilot_id)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  def handle_cast(:off, state) do
+  def handle_call(:off, _from, state) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_disengage(state.conn, state.autopilot_id)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  def handle_cast(:sas_on, state) do
+  def handle_call(:sas_on, _from, state) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, true)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  def handle_cast(:sas_off, state) do
+  def handle_call(:sas_off, _from, state) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas(state.conn, state.autopilot_id, false)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  def handle_cast({:sas_mode, :prograde}, state) do
+  def handle_call({:sas_mode, :prograde}, _from, state) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas_mode(state.conn, state.autopilot_id, 2)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  def handle_cast({:sas_mode, :retrograde}, state) do
+  def handle_call({:sas_mode, :retrograde}, _from, state) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_sas_mode(state.conn, state.autopilot_id, 3)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  def handle_cast({:pitch_and_heading, pitch, heading}, state) do
+  def handle_call({:pitch_and_heading, pitch, heading}, _from, state) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_pitch_and_heading(state.conn, state.autopilot_id, pitch, heading)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  def handle_cast({:heading, value}, state) do
+  def handle_call({:heading, value}, _from, state) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_heading(state.conn, state.autopilot_id, value)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  def handle_cast({:pitch, value}, state) do
+  def handle_call({:pitch, value}, _from, state) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_pitch(state.conn, state.autopilot_id, value)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  def handle_cast({:roll, value}, state) do
+  def handle_call({:roll, value}, _from, state) do
     {:ok, _, _} = Jooce.SpaceCenter.autopilot_set_target_roll(state.conn, state.autopilot_id, value)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  # def handle_call do
+  # def handle_cast do
   #
   # end
 

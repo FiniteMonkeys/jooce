@@ -16,13 +16,13 @@ defmodule Jooce.Controller.Control do
   ## throttle
 
   def throttle(pid, value) do
-    GenServer.cast(pid, {:throttle, value})
+    GenServer.call(pid, {:throttle, value})
   end
 
   ## stage
 
   def stage(pid) do
-    GenServer.cast(pid, :stage)
+    GenServer.call(pid, :stage)
   end
 
   ##
@@ -34,17 +34,17 @@ defmodule Jooce.Controller.Control do
     {:ok, %{conn: conn, control_id: control_id}}
   end
 
-  def handle_cast({:throttle, value}, state) do
+  def handle_call({:throttle, value}, _from, state) do
     {:ok, _, _} = Jooce.SpaceCenter.control_set_throttle(state.conn, state.control_id, value)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  def handle_cast(:stage, state) do
+  def handle_call(:stage, _from, state) do
     {:ok, _, _} = Jooce.SpaceCenter.control_activate_next_stage(state.conn, state.control_id)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  # def handle_call do
+  # def handle_cast do
   #
   # end
 
