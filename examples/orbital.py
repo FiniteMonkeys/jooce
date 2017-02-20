@@ -2,9 +2,9 @@ import math
 import time
 import krpc
 
-turn_start_altitude = 250
-turn_end_altitude = 45000
-target_altitude = 100000
+turn_start_altitude = 0
+turn_end_altitude = 90000
+target_altitude = 90000
 
 conn = krpc.connect(name='orbital.py')
 vessel = conn.space_center.active_vessel
@@ -35,7 +35,7 @@ while True:
 
     # Gravity turn
     if altitude() > turn_start_altitude and altitude() < turn_end_altitude:
-        frac = (altitude() - turn_start_altitude) / (turn_end_altitude - turn_start_altitude)
+        frac = ((altitude() - turn_start_altitude) / (turn_end_altitude - turn_start_altitude)) ** 0.4
         new_turn_angle = frac * 90
         if abs(new_turn_angle - turn_angle) > 0.5:
             turn_angle = new_turn_angle
@@ -115,11 +115,11 @@ burn_ut = ut() + vessel.orbit.time_to_apoapsis - (burn_time/2.)
 lead_time = 5
 conn.space_center.warp_to(burn_ut - lead_time)
 
-vessel.auto_pilot.disengage()
-vessel.control.sas = True
-time.sleep(1)
-vessel.control.sas_mode = conn.space_center.SASMode.prograde
-vessel.auto_pilot.wait()
+# vessel.auto_pilot.disengage()
+# vessel.control.sas = True
+# time.sleep(1)
+# vessel.control.sas_mode = conn.space_center.SASMode.prograde
+# vessel.auto_pilot.wait()
 
 # Execute burn
 print('Ready to execute burn')
