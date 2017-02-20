@@ -1,34 +1,63 @@
+# -*- coding: utf-8 -*-
+"""kRPC script to put a command pod into orbit.
+
+Based on the sample code at https://krpc.github.io/krpc/tutorials/launch-into-orbit.html
+with modifications for our own rocket, as well as a few tweaks.
+
+"""
 import math
 import time
 import krpc
 
+##
+## constants
+##
 turn_start_altitude = 0
 turn_end_altitude = 90000
 target_altitude = 90000
+max_q = 20000
 
+##
+## variables for max Q PID
+##
+k_p = 2.0
+k_d = 1.0
+throttle_pid_d_accum = 0
+
+##
+## connect to KSP
+##
 conn = krpc.connect(name='orbital.py')
 vessel = conn.space_center.active_vessel
 
-# Set up streams for telemetry
+##
+## set up streams for telemetry
+##
 ut = conn.add_stream(getattr, conn.space_center, 'ut')
 altitude = conn.add_stream(getattr, vessel.flight(), 'mean_altitude')
+q = conn.add_stream(getattr, vessel.flight(), 'dynamic_pressure')
 apoapsis = conn.add_stream(getattr, vessel.orbit, 'apoapsis_altitude')
 stage_1_resources = vessel.resources_in_decouple_stage(stage=4, cumulative=False)
 stage_1_fuel = conn.add_stream(stage_1_resources.amount, 'LiquidFuel')
 
-# Pre-launch setup
+##
+## pre-launch setup
+##
 vessel.control.sas = False
 vessel.control.rcs = False
 vessel.control.throttle = 1.0
 
+##
+## launch
+##
 print('Launch')
-
-# Activate the first stage
 vessel.control.activate_next_stage()
 vessel.auto_pilot.engage()
 vessel.auto_pilot.target_pitch_and_heading(90, 90)
 
-# Main ascent loop
+##
+## ascent phase
+##
 stage_1_separated = False
 turn_angle = 0
 while True:
@@ -54,6 +83,19 @@ while True:
     if apoapsis() > target_altitude*0.9:
         print('Approaching target apoapsis')
         break
+
+    # throttle back if Q is too large
+    q_error = max_q - q()
+    p_value = k_p * q_error
+    d_value = k_d * (q_error - throttle_pid_d_accum)
+    throttle_pid_d_accum = q_error
+    # print('throttle control value = %.2f' % (p_value + d_value))
+    new_throttle_value = 1 + ((p_value + d_value) / 40000)
+    if new_throttle_value > 1:
+        new_throttle_value = 1
+    elif new_throttle_value < 0:
+        new_throttle_value =0
+    vessel.control.throttle = new_throttle_value
 
 # Disable engines when target apoapsis is reached
 vessel.control.throttle = 0.25
