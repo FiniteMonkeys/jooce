@@ -28,13 +28,13 @@ defmodule Jooce.Connection do
     Connection.call(conn, :guid)
   end
 
-  def send(conn, data) do
-    Connection.call(conn, {:send, data})
-  end
+  # def send(conn, data) do
+  #   Connection.call(conn, {:send, data})
+  # end
 
-  def recv(conn, bytes, timeout \\ 3_000) do
-    Connection.call(conn, {:recv, bytes, timeout})
-  end
+  # def recv(conn, bytes, timeout \\ 3000) do
+  #   Connection.call(conn, {:recv, bytes, timeout})
+  # end
 
   def call_rpc(conn, service, procedure) do
     Connection.call(conn, {:call_rpc, service, procedure})
@@ -88,25 +88,25 @@ defmodule Jooce.Connection do
     {:reply, {:error, :closed}, state}
   end
 
-  def handle_call({:send, data}, _, %{sock: sock} = state) do
-    case :gen_tcp.send(sock, data) do
-      :ok ->
-        {:reply, :ok, state}
-      {:error, _} = error ->
-        {:disconnect, error, error, state}
-    end
-  end
+  # def handle_call({:send, data}, _, %{sock: sock} = state) do
+  #   case :gen_tcp.send(sock, data) do
+  #     :ok ->
+  #       {:reply, :ok, state}
+  #     {:error, _} = error ->
+  #       {:disconnect, error, error, state}
+  #   end
+  # end
 
-  def handle_call({:recv, bytes, timeout}, _, %{sock: sock} = state) do
-    case :gen_tcp.recv(sock, bytes, timeout) do
-      {:ok, _} = ok ->
-        {:reply, ok, state}
-      {:error, :timeout} = timeout ->
-        {:reply, timeout, state}
-      {:error, _} = error ->
-        {:disconnect, error, error, state}
-    end
-  end
+  # def handle_call({:recv, bytes, timeout}, _, %{sock: sock} = state) do
+  #   case :gen_tcp.recv(sock, bytes, timeout) do
+  #     {:ok, _} = ok ->
+  #       {:reply, ok, state}
+  #     {:error, :timeout} = timeout ->
+  #       {:reply, timeout, state}
+  #     {:error, _} = error ->
+  #       {:disconnect, error, error, state}
+  #   end
+  # end
 
   def handle_call(:guid, _, %{guid: guid} = state) do
     {:reply, {:ok, guid}, state}
