@@ -1,7 +1,9 @@
 defmodule Jooce.Connection do
   use Connection
 
-  @initial_state      %{name: "Jooce", host: '127.0.0.1', rpc_port: 50000, stream_port: 50001, opts: [], timeout: 5000, sock: nil, guid: nil}
+  @moduledoc false
+
+  @initial_state      %{name: "Jooce", host: '127.0.0.1', rpc_port: 50000, stream_port: 50001, opts: [], timeout: 5_000, sock: nil, guid: nil}
   @rpc_helo           <<0x48, 0x45, 0x4C, 0x4C, 0x4F, 0x2D, 0x52, 0x50, 0x43, 0x00, 0x00, 0x00>>
   @stream_helo        <<0x48, 0x45, 0x4C, 0x4C, 0x4F, 0x2D, 0x53, 0x54, 0x52, 0x45, 0x41, 0x4D>>
   @thirty_two_zeros   String.duplicate(<<0>>, 32)
@@ -30,7 +32,7 @@ defmodule Jooce.Connection do
     Connection.call(conn, {:send, data})
   end
 
-  def recv(conn, bytes, timeout \\ 3000) do
+  def recv(conn, bytes, timeout \\ 3_000) do
     Connection.call(conn, {:recv, bytes, timeout})
   end
 
@@ -58,13 +60,13 @@ defmodule Jooce.Connection do
         :ok = :gen_tcp.send(sock, @rpc_helo)
         <<packet::binary-size(32), _::binary>> = state.name <> @thirty_two_zeros
         :ok = :gen_tcp.send(sock, packet)
-        {:ok, guid} = :gen_tcp.recv(sock, 16, 10000)
+        {:ok, guid} = :gen_tcp.recv(sock, 16, 10_000)
         # end handshake stuff
 
         {:ok, %{state | sock: sock, guid: guid}}
       {:error, reason} ->
         :error_logger.format("Connection error: ~s~n", [:inet.format_error(reason)])
-        {:backoff, 1000, state}
+        {:backoff, 1_000, state}
     end
   end
 
@@ -115,13 +117,14 @@ defmodule Jooce.Connection do
   end
 
   def handle_call({:call_rpc, service, procedure}, _, %{sock: sock} = state) do
-    req = Jooce.Protobuf.Request.new(service: service, procedure: procedure)
+    req = %{service: service, procedure: procedure}
+          |> Jooce.Protobuf.Request.new
           |> Jooce.Protobuf.Request.encode
-    req_len = String.length(req) |> :gpb.encode_varint
+    req_len = req |> String.length |> :gpb.encode_varint
     :gen_tcp.send(sock, req_len <> req)
 
-    {resp_len, _} = read_varint(sock) |> :gpb.decode_varint
-    {:ok, resp} = :gen_tcp.recv(sock, resp_len, 3000)
+    {resp_len, _} = sock |> read_varint |> :gpb.decode_varint
+    {:ok, resp} = :gen_tcp.recv(sock, resp_len, 3_000)
 
     response = Jooce.Protobuf.Response.decode(resp)
     cond do
@@ -135,13 +138,14 @@ defmodule Jooce.Connection do
   end
 
   def handle_call({:call_rpc, service, procedure, args}, _, %{sock: sock} = state) do
-    req = Jooce.Protobuf.Request.new(service: service, procedure: procedure, arguments: build_args(args))
+    req = %{service: service, procedure: procedure, arguments: build_args(args)}
+          |> Jooce.Protobuf.Request.new
           |> Jooce.Protobuf.Request.encode
-    req_len = String.length(req) |> :gpb.encode_varint
+    req_len = req |> String.length |> :gpb.encode_varint
     :gen_tcp.send(sock, req_len <> req)
 
-    {resp_len, _} = read_varint(sock) |> :gpb.decode_varint
-    {:ok, resp} = :gen_tcp.recv(sock, resp_len, 3000)
+    {resp_len, _} = sock |> read_varint |> :gpb.decode_varint
+    {:ok, resp} = :gen_tcp.recv(sock, resp_len, 3_000)
 
     response = Jooce.Protobuf.Response.decode(resp)
     cond do
@@ -159,7 +163,7 @@ defmodule Jooce.Connection do
 
   """
   def read_varint(sock, buffer \\ <<>>) do
-    case :gen_tcp.recv(sock, 1, 3000) do
+    case :gen_tcp.recv(sock, 1, 3_000) do
       {:ok, <<1 :: size(1), _ :: bitstring>> = byte} ->
         read_varint(sock, buffer <> byte)
       {:ok, <<0 :: size(1), _ :: size(7)>> = byte} ->

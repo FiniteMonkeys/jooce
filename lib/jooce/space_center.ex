@@ -1,4 +1,5 @@
 defmodule Jooce.SpaceCenter do
+  @moduledoc false
 
 # Enumerations:
 #   CameraMode
