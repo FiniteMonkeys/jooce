@@ -14,6 +14,7 @@ defmodule Jooce.ConnectionSupervisor do
   end
 
   def start_link do
+    Logger.debug "in Jooce.ConnectionSupervisor.start_link"
     start_link(%{sup: nil, name: "Jooce"})
   end
 

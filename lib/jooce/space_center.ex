@@ -116,7 +116,7 @@ get_ActiveVessel() : uint64
 """
 @spec active_vessel(pid) :: {atom, integer, integer}
 def active_vessel(conn) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "get_ActiveVessel") do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "get_ActiveVessel") do
     {:ok, return_value, time} ->
       {vessel_id, _} = :gpb.decode_varint(return_value)
       {:ok, vessel_id, time}
@@ -132,7 +132,7 @@ Sets the ID of the active vessel.
 set_ActiveVessel(uint64 value)
 """
 def set_active_vessel(conn, vessel_id) do
-  Jooce.Connection.call_rpc(conn, "SpaceCenter", "set_ActiveVessel", [{vessel_id, :uint64, nil}])
+  Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "set_ActiveVessel", [{vessel_id, :uint64, nil}])
 end
 
 #   get_Vessels() : KRPC.List
@@ -152,7 +152,7 @@ Returns a list of vessels from the given `craftDirectory` that can be launched.
 LaunchableVessels(string craftDirectory) : KRPC.List
 """
 def launchable_vessels(conn, craft_directory \\ "VAB") do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "LaunchableVessels", [{craft_directory, :string, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "LaunchableVessels", [{craft_directory, :string, nil}]) do
     {:ok, return_value, time} ->
       list = for name <- Jooce.Protobuf.List.decode(return_value).items, into: [], do: :gpb.decode_type(:string, name, nil)
       {:ok, list, time}
@@ -196,7 +196,7 @@ Engage the auto-pilot.
 AutoPilot_Engage(uint64 this)
 """
 def autopilot_engage(conn, autopilot_id) do
-  Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_Engage", [{autopilot_id, :uint64, nil}])
+  Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "AutoPilot_Engage", [{autopilot_id, :uint64, nil}])
 end
 
 @doc ~S"""
@@ -206,7 +206,7 @@ Disengage the auto-pilot.
 AutoPilot_Disengage(uint64 this)
 """
 def autopilot_disengage(conn, autopilot_id) do
-  Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_Disengage", [{autopilot_id, :uint64, nil}])
+  Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "AutoPilot_Disengage", [{autopilot_id, :uint64, nil}])
 end
 
 #   AutoPilot_Wait(uint64 this)
@@ -225,7 +225,7 @@ Gets the target pitch angle, in degrees, between -90° and +90°.
 AutoPilot_get_TargetPitch(uint64 this) : float
 """
 def autopilot_get_target_pitch(conn, autopilot_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_TargetPitch", [{autopilot_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_TargetPitch", [{autopilot_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       {target_pitch, _} = :gpb.decode_type(:float, return_value, nil)
       {:ok, target_pitch, time}
@@ -241,7 +241,7 @@ Sets the target pitch angle, in degrees, between -90° and +90°.
 AutoPilot_set_TargetPitch(uint64 this, float value)
 """
 def autopilot_set_target_pitch(conn, autopilot_id, value) do
-  Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_set_TargetPitch", [{autopilot_id, :uint64, nil}, {value, :float, nil}])
+  Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "AutoPilot_set_TargetPitch", [{autopilot_id, :uint64, nil}, {value, :float, nil}])
 end
 
 @doc ~S"""
@@ -251,7 +251,7 @@ Gets the target heading angle, in degrees, between 0° and 360°.
 AutoPilot_get_TargetHeading(uint64 this) : float
 """
 def autopilot_get_target_heading(conn, autopilot_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_TargetHeading", [{autopilot_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_TargetHeading", [{autopilot_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       {target_heading, _} = :gpb.decode_type(:float, return_value, nil)
       {:ok, target_heading, time}
@@ -267,7 +267,7 @@ Sets the target heading angle, in degrees, between 0° and 360°.
 AutoPilot_set_TargetHeading(uint64 this, float value)
 """
 def autopilot_set_target_heading(conn, autopilot_id, value) do
-  Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_set_TargetHeading", [{autopilot_id, :uint64, nil}, {value, :float, nil}])
+  Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "AutoPilot_set_TargetHeading", [{autopilot_id, :uint64, nil}, {value, :float, nil}])
 end
 
 #   AutoPilot_get_TargetRoll(uint64 this) : float
@@ -282,7 +282,7 @@ Gets the state of SAS.
 AutoPilot_get_SAS(uint64 this) : bool
 """
 def autopilot_get_sas(conn, autopilot_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_SAS", [{autopilot_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_SAS", [{autopilot_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       {sas_enabled, _} = :gpb.decode_type(:bool, return_value, nil)
       {:ok, sas_enabled, time}
@@ -298,7 +298,7 @@ Sets the state of SAS.
 AutoPilot_set_SAS(uint64 this, bool value)
 """
 def autopilot_set_sas(conn, autopilot_id, value) do
-  Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_set_SAS", [{autopilot_id, :uint64, nil}, {value, :bool, nil}])
+  Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "AutoPilot_set_SAS", [{autopilot_id, :uint64, nil}, {value, :bool, nil}])
 end
 
 @doc ~S"""
@@ -308,7 +308,7 @@ Gets the current SASMode. These modes are equivalent to the mode buttons to the 
 AutoPilot_get_SASMode(uint64 this) : int32
 """
 def autopilot_get_sas_mode(conn, autopilot_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_SASMode", [{autopilot_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "AutoPilot_get_SASMode", [{autopilot_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       {sas_mode, _} = :gpb.decode_type(:int32, return_value, nil)
       {:ok, sas_mode, time}
@@ -324,7 +324,7 @@ Sets the current SASMode. These modes are equivalent to the mode buttons to the 
 AutoPilot_set_SASMode(uint64 this, int32 value)
 """
 def autopilot_set_sas_mode(conn, autopilot_id, value) do
-  Jooce.Connection.call_rpc(conn, "SpaceCenter", "AutoPilot_set_SASMode", [{autopilot_id, :uint64, nil}, {value, :int32, nil}])
+  Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "AutoPilot_set_SASMode", [{autopilot_id, :uint64, nil}, {value, :int32, nil}])
 end
 
 #   AutoPilot_get_RollThreshold(uint64 this) : double
@@ -404,7 +404,7 @@ Activates the next stage. Equivalent to pressing the space bar in-game.
 Control_ActivateNextStage(uint64 this) : KRPC.List
 """
 def control_activate_next_stage(conn, control_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Control_ActivateNextStage", [{control_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "Control_ActivateNextStage", [{control_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       list = for id <- Jooce.Protobuf.List.decode(return_value).items, into: [], do: :gpb.decode_type(:uint64, id, nil)
       {:ok, list, time}
@@ -442,7 +442,7 @@ Gets the state of the throttle. A value between 0 and 1.
 Control_get_Throttle(uint64 this) : float
 """
 def control_get_throttle(conn, control_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Control_get_Throttle", [{control_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "Control_get_Throttle", [{control_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       {value, _} = :gpb.decode_type(:float, return_value, nil)
       {:ok, value, time}
@@ -458,7 +458,7 @@ Sets the state of the throttle. A value between 0 and 1.
 Control_set_Throttle(uint64 this, float value)
 """
 def control_set_throttle(conn, control_id, value) do
-  Jooce.Connection.call_rpc(conn, "SpaceCenter", "Control_set_Throttle", [{control_id, :uint64, nil}, {value, :float, nil}])
+  Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "Control_set_Throttle", [{control_id, :uint64, nil}, {value, :float, nil}])
 end
 
 #   Control_get_Pitch(uint64 this) : float
@@ -488,7 +488,7 @@ The altitude above sea level, in meters. Measured from the center of mass of the
 Flight_get_MeanAltitude(uint64 this) : double
 """
 def flight_get_mean_altitude(conn, flight_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Flight_get_MeanAltitude", [{flight_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "Flight_get_MeanAltitude", [{flight_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       {altitude, _} = :gpb.decode_type(:double, return_value, nil)
       {:ok, altitude, time}
@@ -504,7 +504,7 @@ The altitude above the surface of the body or sea level, whichever is closer, in
 Flight_get_SurfaceAltitude(uint64 this) : double
 """
 def flight_get_surface_altitude(conn, flight_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Flight_get_SurfaceAltitude", [{flight_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "Flight_get_SurfaceAltitude", [{flight_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       {altitude, _} = :gpb.decode_type(:double, return_value, nil)
       {:ok, altitude, time}
@@ -520,7 +520,7 @@ The altitude above the surface of the body, in meters. When over water, this is 
 Flight_get_BedrockAltitude(uint64 this) : double
 """
 def flight_get_bedrock_altitude(conn, flight_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Flight_get_BedrockAltitude", [{flight_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "Flight_get_BedrockAltitude", [{flight_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       {altitude, _} = :gpb.decode_type(:double, return_value, nil)
       {:ok, altitude, time}
@@ -984,7 +984,7 @@ Returns the amount of a resource that is currently stored.
 Resources_Amount(uint64 this, string name) : float
 """
 def resources_amount(conn, resources_id, name) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Resources_Amount", [{resources_id, :uint64, nil}, {name, :string, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "Resources_Amount", [{resources_id, :uint64, nil}, {name, :string, nil}]) do
     {:ok, return_value, time} ->
       {amount, _} = :gpb.decode_type(:float, return_value, nil)
       {:ok, amount, time}
@@ -1011,7 +1011,7 @@ This reference frame moves with the vessel, therefore velocities and speeds retu
 Vessel_Flight(uint64 this, uint64 referenceFrame) : uint64
 """
 def vessel_get_flight(conn, vessel_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Vessel_Flight", [{vessel_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "Vessel_Flight", [{vessel_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       {flight_id, _} = :gpb.decode_type(:uint64, return_value, nil)
       {:ok, flight_id, time}
@@ -1044,7 +1044,7 @@ Returns a Control object that can be used to manipulate the vessel’s control i
 Vessel_get_Control(uint64 this) : uint64
 """
 def vessel_get_control(conn, vessel_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Vessel_get_Control", [{vessel_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "Vessel_get_Control", [{vessel_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       {control_id, _} = :gpb.decode_type(:uint64, return_value, nil)
       {:ok, control_id, time}
@@ -1060,7 +1060,7 @@ Gets an AutoPilot object, that can be used to perform simple auto-piloting of th
 Vessel_get_AutoPilot(uint64 this) : uint64
 """
 def vessel_get_autopilot(conn, vessel_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Vessel_get_AutoPilot", [{vessel_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "Vessel_get_AutoPilot", [{vessel_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       {autopilot_id, _} = :gpb.decode_type(:uint64, return_value, nil)
       {:ok, autopilot_id, time}
@@ -1076,7 +1076,7 @@ A Resources object, that can used to get information about resources stored in t
 Vessel_get_Resources(uint64 this) : uint64
 """
 def vessel_get_resources(conn, vessel_id) do
-  case Jooce.Connection.call_rpc(conn, "SpaceCenter", "Vessel_get_Resources", [{vessel_id, :uint64, nil}]) do
+  case Jooce.RpcConnection.call_rpc(conn, "SpaceCenter", "Vessel_get_Resources", [{vessel_id, :uint64, nil}]) do
     {:ok, return_value, time} ->
       {resources_id, _} = :gpb.decode_type(:uint64, return_value, nil)
       {:ok, resources_id, time}

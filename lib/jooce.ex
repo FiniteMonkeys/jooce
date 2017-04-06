@@ -1,88 +1,74 @@
 defmodule Jooce do
+  require Logger
+
   @moduledoc """
   Documentation for Jooce.
   """
 
-  @doc ~S"""
-  Open a connection to a kRPC server.
-  """
-  def start(name \\ "Jooce") do
-    Jooce.Connection.start(name)
-  end
+  # @doc ~S"""
+  # Open a connection to a kRPC server.
+  # """
+  # def start(name \\ "Jooce") do
+  #   Jooce.RpcConnection.start(name)
+  # end
 
   @doc ~S"""
   Open a connection to a kRPC server and link it to the current process.
   """
   def start_link(name \\ "Jooce") do
-    Jooce.Connection.start_link(name)
+    Logger.debug "in Jooce.start_link"
+    Jooce.ConnectionSupervisor.start_link(%{name: name})
   end
 
   @doc ~S"""
   Close a connection to a kRPC server.
   """
   def stop(conn) do
-    Jooce.Connection.stop(conn)
+    Logger.debug "in Jooce.stop"
+    Jooce.RpcConnection.stop(conn)
   end
 
-  @doc ~S"""
-  Returns some information about the server, such as the version.
+  # @doc ~S"""
+  # Returns some information about the server, such as the version.
+  #
+  # ## RPC signature
+  # GetStatus() : KRPC.Status
+  # """
+  # def get_status do
+  #   {:ok, conn} = Jooce.RpcConnection.start
+  #   status = get_status(conn)
+  #   Jooce.RpcConnection.stop(conn)
+  #   status
+  # end
 
-  ## RPC signature
-  GetStatus() : KRPC.Status
-  """
   def get_status do
-    {:ok, conn} = Jooce.Connection.start
-    status = get_status(conn)
-    Jooce.Connection.stop(conn)
-    status
-  end
-
-  def get_status(conn) do
-    {:ok, return_value, _} = Jooce.Connection.call_rpc(conn, "KRPC", "GetStatus")
+    Logger.debug "in Jooce.get_status"
+    {:ok, return_value, _} = Jooce.RpcConnection.call_rpc(Jooce.RpcConnection, "KRPC", "GetStatus")
     Jooce.Protobuf.Status.decode(return_value)
   end
 
-  @doc ~S"""
-  Returns information on all services, procedures, classes, properties etc. provided by the server.
-  Can be used by client libraries to automatically create functionality such as stubs.
-
-  ## RPC signature
-  GetServices() : KRPC.Services
-  """
-  def get_services do
-    {:ok, conn} = Jooce.Connection.start
-    services = get_services(conn)
-    Jooce.Connection.stop(conn)
-    services
-  end
+  # @doc ~S"""
+  # Returns information on all services, procedures, classes, properties etc. provided by the server.
+  # Can be used by client libraries to automatically create functionality such as stubs.
+  #
+  # ## RPC signature
+  # GetServices() : KRPC.Services
+  # """
+  # def get_services do
+  #   {:ok, conn} = Jooce.RpcConnection.start
+  #   services = get_services(conn)
+  #   Jooce.RpcConnection.stop(conn)
+  #   services
+  # end
 
   def get_services(conn) do
-    {:ok, return_value, _} = Jooce.Connection.call_rpc(conn, "KRPC", "GetServices")
+    Logger.debug "in Jooce.get_services"
+    {:ok, return_value, _} = Jooce.RpcConnection.call_rpc(conn, "KRPC", "GetServices")
     Jooce.Protobuf.Services.decode(return_value)
   end
 
   def describe_services(%Jooce.Protobuf.Services{services: services}, device \\ :stderr) do
     for service <- services, do: describe_service(service, device)
-  end
-
-  @doc ~S"""
-  Add a streaming request and return its identifier.
-
-  ## RPC signature
-  AddStream(KRPC.Request request) : uint32
-  """
-  def add_stream do
-
-  end
-
-  @doc ~S"""
-  Remove a streaming request.
-
-  ## RPC signature
-  RemoveStream(uint32 id)
-  """
-  def remove_stream do
-
   end
 
   @doc ~S"""
@@ -93,7 +79,8 @@ defmodule Jooce do
   get_Clients() : KRPC.List
   """
   def get_clients(conn) do
-    {:ok, return_value, _} = Jooce.Connection.call_rpc(conn, "KRPC", "get_Clients")
+    Logger.debug "in Jooce.get_clients"
+    {:ok, return_value, _} = Jooce.RpcConnection.call_rpc(conn, "KRPC", "get_Clients")
     Enum.map(Jooce.Protobuf.List.decode(return_value).items, fn(x) -> extract_client_info(x) end)
   end
 
@@ -104,7 +91,8 @@ defmodule Jooce do
   get_CurrentGameScene() : int32
   """
   def get_current_scene(conn) do
-    {:ok, return_value, _} = Jooce.Connection.call_rpc(conn, "KRPC", "get_CurrentGameScene")
+    Logger.debug "in Jooce.get_current_scene"
+    {:ok, return_value, _} = Jooce.RpcConnection.call_rpc(conn, "KRPC", "get_CurrentGameScene")
     case return_value do
       <<0>> ->
         :space_center

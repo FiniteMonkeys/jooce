@@ -34,6 +34,7 @@ defmodule Jooce.RpcConnection do
   end
 
   def stop(conn) do
+    Logger.debug "in Jooce.RpcConnection.stop"
     Connection.call(conn, :close)
   end
 
