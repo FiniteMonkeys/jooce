@@ -1,7 +1,6 @@
-defmodule Jooce.RpcConnection do
+defmodule Jooce.Connection.Rpc do
   use Connection
   require Logger
-  import Supervisor.Spec
 
   @moduledoc false
 
@@ -13,28 +12,18 @@ defmodule Jooce.RpcConnection do
   ## API
   ##
 
-  # def start(%{sup: sup, name: name} = args) do
-  #   Logger.debug "in Jooce.RpcConnection.start({sup, name})"
-  #   Connection.start(__MODULE__, %{@initial_state | name: name, sup: sup}, name: __MODULE__)
-  # end
-
-  # def start(%{sup: sup} = args) do
-  #   Logger.debug "in Jooce.RpcConnection.start({sup})"
-  #   start(%{args | name: "Jooce"})
-  # end
-
   def start_link(%{sup: sup, name: name}) do
-    Logger.debug "in Jooce.RpcConnection.start_link({sup, name})"
-    Connection.start_link(__MODULE__, %{@initial_state | name: name, sup: sup}, name: __MODULE__)
+    Logger.debug "in #{__MODULE__}.start_link({sup, name})"
+    Connection.start_link(__MODULE__, %{@initial_state | name: name, sup: sup}, [name: String.to_atom("RPC(#{name})")])
   end
 
   def start_link(%{sup: _} = args) do
-    Logger.debug "in Jooce.RpcConnection.start_link({sup})"
+    Logger.debug "in #{__MODULE__}.start_link({sup})"
     start_link(%{args | name: "Jooce"})
   end
 
   def stop(conn) do
-    Logger.debug "in Jooce.RpcConnection.stop"
+    Logger.debug "in #{__MODULE__}.stop"
     Connection.call(conn, :close)
   end
 
@@ -95,12 +84,12 @@ defmodule Jooce.RpcConnection do
   ##
 
   def init(state) do
-    Logger.debug "in Jooce.RpcConnection.init"
+    Logger.debug "in #{__MODULE__}.init"
     {:connect, :init, %{state | sock: nil}}
   end
 
   def connect(_info, %{sock: nil} = state) do
-    Logger.debug "in Jooce.RpcConnection.connect"
+    Logger.debug "in #{__MODULE__}.connect"
     case :gen_tcp.connect(state.host, state.port, [:binary, {:active, false}, {:packet, :raw}] ++ state.opts, state.timeout) do
       {:ok, sock} ->
 
@@ -133,16 +122,17 @@ defmodule Jooce.RpcConnection do
     {:stop, :normal, %{state | sock: nil}}
   end
 
-  def handle_info(:start_stream_connection, %{sup: sup, guid: guid} = state) do
-    Logger.debug "in Jooce.RpcConnection.handle_info(:start_stream_connection) with guid"
+  def handle_info(:start_stream_connection, %{sup: sup, name: name, guid: guid} = state) do
+    import Supervisor.Spec, warn: false
+    Logger.debug "in #{__MODULE__}.handle_info(:start_stream_connection) with guid"
     opts = [restart: :temporary, function: :start_link]
-    spec = worker(Jooce.StreamConnection, [guid], opts)
+    spec = worker(Jooce.Connection.Stream, [guid, name], opts)
     {:ok, stream_conn} = Supervisor.start_child(sup, spec)
     {:noreply, %{state | stream_conn: stream_conn}}
   end
 
   def handle_info(:start_stream_connection, state) do
-    Logger.debug "in Jooce.RpcConnection.handle_info(:start_stream_connection) with guid"
+    Logger.debug "in #{__MODULE__}.handle_info(:start_stream_connection) with guid"
     # connect hasn't returned yet?
     send(self(), :start_stream_connection)
     {:noreply, state}
@@ -182,9 +172,9 @@ defmodule Jooce.RpcConnection do
   #   {:reply, {:ok, stream_conn}, %{state | stream_conn: stream_conn}}
   # end
 
-  def handle_call({:add_stream_listener, stream_id, pid}, _from, state) do
-    Jooce.StreamConnection.add_stream_listener(state.stream_conn, stream_id, pid)
-  end
+  # def handle_call({:add_stream_listener, stream_id, pid}, _from, state) do
+  #   Jooce.StreamConnection.add_stream_listener(state.stream_conn, stream_id, pid)
+  # end
 
   def handle_call(:close, from, state) do
     {:disconnect, {:close, from}, state}

@@ -1,4 +1,4 @@
-defmodule Jooce.StreamConnection do
+defmodule Jooce.Connection.Stream do
   use Connection
   require Logger
 
@@ -12,34 +12,34 @@ defmodule Jooce.StreamConnection do
   ## API
   ##
 
-  def start(guid) do
-    Connection.start(__MODULE__, %{@initial_state | guid: guid}, name: __MODULE__)
-  end
+  # def start(guid) do
+  #   Connection.start(__MODULE__, %{@initial_state | guid: guid}, name: __MODULE__)
+  # end
 
-  def start_link(guid) do
-    Logger.debug "in Jooce.StreamConnection.start_link"
-    Connection.start_link(__MODULE__, %{@initial_state | guid: guid}, name: __MODULE__)
+  def start_link(guid, name) do
+    Logger.debug "in #{__MODULE__}.start_link"
+    Connection.start_link(__MODULE__, %{@initial_state | guid: guid}, [name: String.to_atom("Stream(#{name})")])
   end
 
   def stop(conn) do
     Connection.call(conn, :close)
   end
 
-  def add_stream_listener(conn, stream_id, pid) do
-    Connection.call(conn, {:add_stream_listener, stream_id, pid})
-  end
+  # def add_stream_listener(conn, stream_id, pid) do
+  #   Connection.call(conn, {:add_stream_listener, stream_id, pid})
+  # end
 
   ##
   ## callbacks
   ##
 
   def init(state) do
-    Logger.debug "in Jooce.StreamConnection.init"
+    Logger.debug "in #{__MODULE__}.init"
     {:connect, :init, %{state | sock: nil}}
   end
 
   def connect(_info, %{sock: nil} = state) do
-    Logger.debug "in Jooce.StreamConnection.connect"
+    Logger.debug "in #{__MODULE__}.connect"
     case :gen_tcp.connect(state.host, state.port, [:binary, {:active, false}, {:packet, :raw}] ++ state.opts, state.timeout) do
       {:ok, sock} ->
 
@@ -79,11 +79,11 @@ defmodule Jooce.StreamConnection do
     {:disconnect, {:close, from}, state}
   end
 
-  def handle_call({:add_stream_listener, _stream_id, _pid}, _from, state) do
-    ## set up a loop
-    ##   when something comes in for it, send to pid
-    {:reply, :ok, state}
-  end
+  # def handle_call({:add_stream_listener, _stream_id, _pid}, _from, state) do
+  #   ## set up a loop
+  #   ##   when something comes in for it, send to pid
+  #   {:reply, :ok, state}
+  # end
 
   @doc """
   Reads a varint from a connection.
