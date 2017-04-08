@@ -12,10 +12,6 @@ defmodule Jooce.Connection.Stream do
   ## API
   ##
 
-  # def start(guid) do
-  #   Connection.start(__MODULE__, %{@initial_state | guid: guid}, name: __MODULE__)
-  # end
-
   def start_link(guid, name) do
     Logger.debug "in #{__MODULE__}.start_link"
     Connection.start_link(__MODULE__, %{@initial_state | guid: guid}, [name: String.to_atom("Stream(#{name})")])

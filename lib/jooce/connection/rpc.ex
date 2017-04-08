@@ -27,10 +27,6 @@ defmodule Jooce.Connection.Rpc do
     Connection.call(conn, :close)
   end
 
-  # def guid(conn) do
-  #   Connection.call(conn, :guid)
-  # end
-
   # @doc ~S"""
   # Add a streaming request and return its identifier.
   #
@@ -61,14 +57,6 @@ defmodule Jooce.Connection.Rpc do
   # """
   # def remove_stream(conn, id) do
   #   Connection.call(conn, {:call_rpc, "KRPC", "RemoveStream", [id]})
-  # end
-
-  # def send(conn, data) do
-  #   Connection.call(conn, {:send, data})
-  # end
-
-  # def recv(conn, bytes, timeout \\ 3000) do
-  #   Connection.call(conn, {:recv, bytes, timeout})
   # end
 
   def call_rpc(conn, service, procedure) do
@@ -141,30 +129,6 @@ defmodule Jooce.Connection.Rpc do
   def handle_call(_, _, %{sock: nil} = state) do
     :error_logger.format("Closing connection because sock is nil~n", [])
     {:reply, {:error, :closed}, state}
-  end
-
-  # def handle_call({:send, data}, _, %{sock: sock} = state) do
-  #   case :gen_tcp.send(sock, data) do
-  #     :ok ->
-  #       {:reply, :ok, state}
-  #     {:error, _} = error ->
-  #       {:disconnect, error, error, state}
-  #   end
-  # end
-
-  # def handle_call({:recv, bytes, timeout}, _, %{sock: sock} = state) do
-  #   case :gen_tcp.recv(sock, bytes, timeout) do
-  #     {:ok, _} = ok ->
-  #       {:reply, ok, state}
-  #     {:error, :timeout} = timeout ->
-  #       {:reply, timeout, state}
-  #     {:error, _} = error ->
-  #       {:disconnect, error, error, state}
-  #   end
-  # end
-
-  def handle_call(:guid, _, %{guid: guid} = state) do
-    {:reply, {:ok, guid}, state}
   end
 
   # def handle_call(:start_stream, _, state) do
