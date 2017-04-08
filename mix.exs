@@ -20,7 +20,7 @@ defmodule Jooce.Mixfile do
     # Specify extra applications you'll use from Erlang/Elixir
     [
       extra_applications: [:logger, :connection, :exprotobuf],
-      mod: {Jooce.Application, []}
+      mod: {Jooce, []}
     ]
   end
 
