@@ -23,6 +23,18 @@ defmodule Jooce.Client do
     GenServer.call(__MODULE__, {:connect, name})
   end
 
+  def ping_connection(conn) do
+    Jooce.Connection.Rpc.ping(conn)
+  end
+
+  def call_rpc(conn, service, procedure) do
+    Jooce.Connection.Rpc.call_rpc(conn, service, procedure)
+  end
+
+  def call_rpc(conn, service, procedure, args) do
+    Jooce.Connection.Rpc.call_rpc(conn, service, procedure, args)
+  end
+
   ##
   ## callbacks
   ##
@@ -39,6 +51,18 @@ defmodule Jooce.Client do
     spec = supervisor(Jooce.Connection, [name], opts)
     {:ok, conn_sup_pid} = Supervisor.start_child(Jooce, spec)
 
-    {:reply, {:ok, conn_sup_pid}, Map.put(state, name, conn_sup_pid)}
+    # TODO: maybe have a separate GenServer which is the interface to the RPC and stream connections?
+
+    conn = (name |> rpc_connection)
+    {:reply, {:ok, conn}, Map.put(state, name, conn_sup_pid)}
+  end
+
+  ##
+  ## private functions
+  ##
+
+  defp rpc_connection(name) do
+    [{conn,_}|_] = Registry.lookup(Jooce.Registry, "RPC(#{name})")
+    conn
   end
 end

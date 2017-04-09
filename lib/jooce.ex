@@ -11,7 +11,8 @@ defmodule Jooce do
     Logger.debug "in Jooce.start"
 
     children = [
-      worker(Jooce.Client, [%{}, [name: Jooce.Client]])
+      worker(Jooce.Client, [%{}, [name: Jooce.Client]]),
+      supervisor(Registry, [:unique, Jooce.Registry])
     ]
     opts = [strategy: :one_for_one, name: Jooce]
 

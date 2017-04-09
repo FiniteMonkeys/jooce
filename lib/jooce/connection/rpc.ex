@@ -14,7 +14,8 @@ defmodule Jooce.Connection.Rpc do
 
   def start_link(%{sup: sup, name: name}) do
     Logger.debug "in #{__MODULE__}.start_link({sup, name})"
-    Connection.start_link(__MODULE__, %{@initial_state | name: name, sup: sup}, [name: String.to_atom("RPC(#{name})")])
+    connection_name = {:via, Registry, {Jooce.Registry, "RPC(#{name})"}}
+    Connection.start_link(__MODULE__, %{@initial_state | name: name, sup: sup}, [name: connection_name])
   end
 
   def start_link(%{sup: _} = args) do
@@ -25,6 +26,10 @@ defmodule Jooce.Connection.Rpc do
   def stop(conn) do
     Logger.debug "in #{__MODULE__}.stop"
     Connection.call(conn, :close)
+  end
+
+  def ping(conn) do
+    Connection.call(conn, :ping)
   end
 
   # @doc ~S"""
@@ -129,6 +134,10 @@ defmodule Jooce.Connection.Rpc do
   def handle_call(_, _, %{sock: nil} = state) do
     :error_logger.format("Closing connection because sock is nil~n", [])
     {:reply, {:error, :closed}, state}
+  end
+
+  def handle_call(:ping, _from, state) do
+    {:reply, :pong, state}
   end
 
   # def handle_call(:start_stream, _, state) do
