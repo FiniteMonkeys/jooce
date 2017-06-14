@@ -1,7 +1,7 @@
-%{"bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], []},
-  "connection": {:hex, :connection, "1.0.4", "a1cae72211f0eef17705aaededacac3eb30e6625b04a6117c1b2db6ace7d5976", [:mix], []},
-  "credo": {:hex, :credo, "0.7.2", "850463f126c09227994967fdcf8b8ad7684ab220f7727c00bcafc0ac37bd3660", [:mix], [{:bunt, "~> 0.2.0", [hex: :bunt, optional: false]}]},
-  "espec": {:hex, :espec, "1.2.2", "c54cead6b197e9bcf32406d43eaedb1675a2b35c5ccc63f1033782c8d616b4a2", [:mix], [{:meck, "~> 0.8.4", [hex: :meck, optional: false]}]},
-  "exprotobuf": {:hex, :exprotobuf, "1.2.4", "861fa1761f01057fa073c5f24a88fff3619a1218b10202024e7f978f12111345", [:mix], [{:gpb, "~> 3.24", [hex: :gpb, optional: false]}]},
+%{"bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},
+  "connection": {:hex, :connection, "1.0.4", "a1cae72211f0eef17705aaededacac3eb30e6625b04a6117c1b2db6ace7d5976", [:mix], [], "hexpm"},
+  "credo": {:hex, :credo, "0.7.2", "850463f126c09227994967fdcf8b8ad7684ab220f7727c00bcafc0ac37bd3660", [:mix], [{:bunt, "~> 0.2.0", [hex: :bunt, repo: "hexpm", optional: false]}], "hexpm"},
+  "espec": {:hex, :espec, "1.2.2", "c54cead6b197e9bcf32406d43eaedb1675a2b35c5ccc63f1033782c8d616b4a2", [:mix], [{:meck, "~> 0.8.4", [hex: :meck, repo: "hexpm", optional: false]}], "hexpm"},
+  "exprotobuf": {:hex, :exprotobuf, "1.2.4", "861fa1761f01057fa073c5f24a88fff3619a1218b10202024e7f978f12111345", [:mix], [{:gpb, "~> 3.24", [hex: :gpb, repo: "hexpm", optional: false]}], "hexpm"},
   "gpb": {:git, "git://github.com/CraigCottingham/gpb.git", "2da70a64f5f3833e579d008baea625fe3ae38f88", [branch: "export-functions"]},
-  "meck": {:hex, :meck, "0.8.4", "59ca1cd971372aa223138efcf9b29475bde299e1953046a0c727184790ab1520", [:make, :rebar], []}}
+  "meck": {:hex, :meck, "0.8.4", "59ca1cd971372aa223138efcf9b29475bde299e1953046a0c727184790ab1520", [:make, :rebar], [], "hexpm"}}
