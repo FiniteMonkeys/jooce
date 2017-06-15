@@ -117,7 +117,7 @@ defmodule Jooce.Connection do
   end
 
   def handle_call({:call_rpc, service, procedure}, _, %{sock: sock} = state) do
-    req = %{service: service, procedure: procedure}
+    req = [service: service, procedure: procedure]
           |> Jooce.Protobuf.Request.new
           |> Jooce.Protobuf.Request.encode
     req_len = req |> String.length |> :gpb.encode_varint
@@ -138,7 +138,7 @@ defmodule Jooce.Connection do
   end
 
   def handle_call({:call_rpc, service, procedure, args}, _, %{sock: sock} = state) do
-    req = %{service: service, procedure: procedure, arguments: build_args(args)}
+    req = [service: service, procedure: procedure, arguments: build_args(args)]
           |> Jooce.Protobuf.Request.new
           |> Jooce.Protobuf.Request.encode
     req_len = req |> String.length |> :gpb.encode_varint
