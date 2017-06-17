@@ -19,7 +19,7 @@ defmodule Jooce.Mixfile do
   def application do
     # Specify extra applications you'll use from Erlang/Elixir
     [
-      extra_applications: [:logger, :connection, :exprotobuf],
+      extra_applications: [:logger, :connection, :exprotobuf, :gen_state_machine],
       mod: {Jooce.Application, []}
     ]
   end
@@ -39,6 +39,7 @@ defmodule Jooce.Mixfile do
       {:credo, "~> 0.7.2", only: [:dev, :test]},
       {:espec, "~> 1.2.2", only: :test},
       {:exprotobuf, "~> 1.2.3"},
+      {:gen_state_machine, "~> 2.0"},
       {:gpb, override: true, git: "git://github.com/CraigCottingham/gpb.git", branch: "export-functions"},
     ]
   end
