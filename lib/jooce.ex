@@ -6,6 +6,22 @@ defmodule Jooce do
   Documentation for Jooce.
   """
 
+  ##
+  ## API
+  ##
+
+  def connect(name) do
+    Logger.debug "in Jooce.connect"
+    Jooce.Client.connect(name)
+  end
+
+  ##
+  ## internal API
+  ##
+
+  # @doc ~S"""
+  # Open a connection to a kRPC server.
+  # """
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
     Logger.debug "in Jooce.start"
@@ -18,21 +34,6 @@ defmodule Jooce do
 
     Supervisor.start_link(children, opts)
   end
-
-  # @doc ~S"""
-  # Open a connection to a kRPC server.
-  # """
-  # def start(name \\ "Jooce") do
-  #   Jooce.RpcConnection.start(name)
-  # end
-
-  # @doc ~S"""
-  # Open a connection to a kRPC server and link it to the current process.
-  # """
-  # def start_link(name \\ "Jooce") do
-  #   Logger.debug "in Jooce.start_link"
-  #   Jooce.Connection.start_link(%{name: name})
-  # end
 
   # @doc ~S"""
   # Close a connection to a kRPC server.

@@ -35,6 +35,16 @@ defmodule Jooce.Client do
     Jooce.Connection.Rpc.call_rpc(conn, service, procedure, args)
   end
 
+  # def add_stream(conn, service, procedure) do
+  #   Jooce.Connection.Rpc.call_rpc(conn, "KRPC", "AddStream", args)
+  # end
+  #
+  # def add_stream(conn, service, procedure, args) do
+  #   Jooce.Connection.Rpc.call_rpc(conn, "KRPC", "AddStream", args)
+  # end
+
+  #   {:ok, stream_id, time} = Connection.call(conn, {:call_rpc, "KRPC", "AddStream", [{build_stream_request(service, procedure, args), {:module, Jooce.Protobuf.Request}, nil}]})
+
   ##
   ## callbacks
   ##

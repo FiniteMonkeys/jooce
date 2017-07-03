@@ -22,6 +22,7 @@ defmodule Jooce.Connection do
     child_opts = [restart: :temporary, function: :start_link]
     children = [
       worker(Jooce.Connection.Rpc, [%{args | sup: self()}], child_opts)
+      # don't start Jooce.Connection.Stream -- Rpc has to do that
     ]
     opts = [strategy: :rest_for_one, max_restarts: 5, max_seconds: 5]
     supervise(children, opts)
