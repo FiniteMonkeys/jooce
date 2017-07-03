@@ -97,7 +97,7 @@ defmodule SubOrbital do
   end
 
   def initialize(name) do
-    {:ok, conn} = Jooce.start_link(name)
+    {:ok, conn} = Jooce.connect(name)
     {:ok, vessel_id, _} = Jooce.SpaceCenter.active_vessel(conn)
     {:ok, autopilot_pid} = Autopilot.start(conn, vessel_id)
     {:ok, control_pid} = Control.start(conn, vessel_id)
