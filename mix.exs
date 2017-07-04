@@ -9,7 +9,14 @@ defmodule Jooce.Mixfile do
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
       preferred_cli_env: [espec: :test],
-      deps: deps()
+      deps: deps(),
+
+      name: "Jooce",
+      source_url: "https://github.com/FiniteMonkeys/jooce",
+      homepage_url: "https://github.com/FiniteMonkeys/jooce",
+      docs: [
+        extras: ["README.md"]
+      ]
     ]
   end
 
