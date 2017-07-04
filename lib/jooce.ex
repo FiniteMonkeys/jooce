@@ -10,8 +10,11 @@ defmodule Jooce do
   ## API
   ##
 
+  # @doc ~S"""
+  #
+  # """
   def connect(name) do
-    Logger.debug "in Jooce.connect"
+    Logger.debug "in #{__MODULE__}.connect/1"
     Jooce.Client.connect(name)
   end
 
@@ -24,7 +27,7 @@ defmodule Jooce do
   # """
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
-    Logger.debug "in Jooce.start"
+    Logger.debug "in #{__MODULE__}.start/2"
 
     children = [
       worker(Jooce.Client, [%{}, [name: Jooce.Client]]),
@@ -82,7 +85,11 @@ defmodule Jooce do
   #   Jooce.Protobuf.Services.decode(return_value)
   # end
 
+  # @doc ~S"""
+  #
+  # """
   def describe_services(%Jooce.Protobuf.Services{services: services}, device \\ :stderr) do
+    Logger.debug "in #{__MODULE__}.describe_services/2"
     for service <- services, do: describe_service(service, device)
   end
 
@@ -135,7 +142,11 @@ defmodule Jooce do
   #   {guid, name, ip_address}
   # end
 
+  # @doc ~S"""
+  #
+  # """
   def describe_service(%{name: "KRPC"} = service, device) do
+    Logger.debug "in #{__MODULE__}.describe_service/2"
     IO.puts device, "defmodule Jooce.#{service.name} do"
     # IO.puts device, (inspect service)
     describe_module_doc(service.documentation, device)
@@ -147,11 +158,18 @@ defmodule Jooce do
     IO.puts device, "end"
   end
 
+  # @doc ~S"""
+  #
+  # """
   def describe_service(_service, _device) do
 
   end
 
+  # @doc ~S"""
+  #
+  # """
   def describe_module_doc(documentation, device) do
+    Logger.debug "in #{__MODULE__}.describe_module_doc/2"
     IO.puts device, ~s(  @moduledoc ~S""")
     for line <- String.split(documentation, "\n", trim: true) do
       IO.puts device, "  #{line}"
@@ -170,11 +188,19 @@ defmodule Jooce do
   #   end
   # end
 
+  # @doc ~S"""
+  #
+  # """
   def describe_procedures(procedures, device) do
+    Logger.debug "in #{__MODULE__}.describe_procedures/2"
     for procedure <- procedures, do: describe_procedure(procedure, device)
   end
 
+  # @doc ~S"""
+  #
+  # """
   def describe_procedure(procedure, device) do
+    Logger.debug "in #{__MODULE__}.describe_procedure/2"
     IO.puts device, ~s(\n  @doc ~S""")
     # IO.puts device, (inspect procedure)
     for line <- String.split(procedure.documentation, "\n", trim: true) do

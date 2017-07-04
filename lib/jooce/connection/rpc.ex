@@ -12,23 +12,36 @@ defmodule Jooce.Connection.Rpc do
   ## API
   ##
 
+  # @doc ~S"""
+  #
+  # """
   def start_link(%{sup: sup, name: name}) do
     Logger.debug "in #{__MODULE__}.start_link({sup, name})"
     connection_name = {:via, Registry, {Jooce.Registry, "RPC(#{name})"}}
     Connection.start_link(__MODULE__, %{@initial_state | name: name, sup: sup}, [name: connection_name])
   end
 
+  # @doc ~S"""
+  #
+  # """
   def start_link(%{sup: _} = args) do
     Logger.debug "in #{__MODULE__}.start_link({sup})"
     start_link(%{args | name: "Jooce"})
   end
 
+  # @doc ~S"""
+  #
+  # """
   def stop(conn) do
-    Logger.debug "in #{__MODULE__}.stop"
+    Logger.debug "in #{__MODULE__}.stop/1"
     Connection.call(conn, :close)
   end
 
+  # @doc ~S"""
+  #
+  # """
   def ping(conn) do
+    Logger.debug "in #{__MODULE__}.ping/1"
     Connection.call(conn, :ping)
   end
 
@@ -64,11 +77,19 @@ defmodule Jooce.Connection.Rpc do
   #   Connection.call(conn, {:call_rpc, "KRPC", "RemoveStream", [id]})
   # end
 
+  # @doc ~S"""
+  #
+  # """
   def call_rpc(conn, service, procedure) do
+    Logger.debug "in #{__MODULE__}.call_rpc/3"
     Connection.call(conn, {:call_rpc, service, procedure})
   end
 
+  # @doc ~S"""
+  #
+  # """
   def call_rpc(conn, service, procedure, args) do
+    Logger.debug "in #{__MODULE__}.call_rpc/4"
     Connection.call(conn, {:call_rpc, service, procedure, args})
   end
 
@@ -76,13 +97,19 @@ defmodule Jooce.Connection.Rpc do
   ## callbacks
   ##
 
+  # @doc ~S"""
+  #
+  # """
   def init(state) do
-    Logger.debug "in #{__MODULE__}.init"
+    Logger.debug "in #{__MODULE__}.init/1"
     {:connect, :init, %{state | sock: nil}}
   end
 
+  # @doc ~S"""
+  #
+  # """
   def connect(_info, %{sock: nil} = state) do
-    Logger.debug "in #{__MODULE__}.connect"
+    Logger.debug "in #{__MODULE__}.connect/2"
     case :gen_tcp.connect(state.host, state.port, [:binary, {:active, false}, {:packet, :raw}] ++ state.opts, state.timeout) do
       {:ok, sock} ->
 
@@ -102,7 +129,11 @@ defmodule Jooce.Connection.Rpc do
     end
   end
 
+  # @doc ~S"""
+  #
+  # """
   def disconnect(info, %{sock: sock} = state) do
+    Logger.debug "in #{__MODULE__}.disconnect/2"
     :ok = :gen_tcp.close(sock)
     case info do
       {:close, from} ->
@@ -115,6 +146,9 @@ defmodule Jooce.Connection.Rpc do
     {:stop, :normal, %{state | sock: nil}}
   end
 
+  # @doc ~S"""
+  #
+  # """
   def handle_info(:start_stream_connection, %{sup: sup, name: name, guid: guid} = state) do
     import Supervisor.Spec, warn: false
     Logger.debug "in #{__MODULE__}.handle_info(:start_stream_connection) with guid"
@@ -124,19 +158,29 @@ defmodule Jooce.Connection.Rpc do
     {:noreply, %{state | stream_conn: stream_conn}}
   end
 
+  # @doc ~S"""
+  #
+  # """
   def handle_info(:start_stream_connection, state) do
-    Logger.debug "in #{__MODULE__}.handle_info(:start_stream_connection) with guid"
+    Logger.debug "in #{__MODULE__}.handle_info(:start_stream_connection) without guid"
     # connect hasn't returned yet?
     send(self(), :start_stream_connection)
     {:noreply, state}
   end
 
+  # @doc ~S"""
+  #
+  # """
   def handle_call(_, _, %{sock: nil} = state) do
-    :error_logger.format("Closing connection because sock is nil~n", [])
+    Logger.error "Closing connection because sock is nil"
     {:reply, {:error, :closed}, state}
   end
 
+  # @doc ~S"""
+  #
+  # """
   def handle_call(:ping, _from, state) do
+    Logger.debug "in #{__MODULE__}.handle_call(:ping)"
     {:reply, :pong, state}
   end
 
@@ -149,18 +193,26 @@ defmodule Jooce.Connection.Rpc do
   #   Jooce.StreamConnection.add_stream_listener(state.stream_conn, stream_id, pid)
   # end
 
+  # @doc ~S"""
+  #
+  # """
   def handle_call(:close, from, state) do
+    Logger.debug "in #{__MODULE__}.handle_call(:disconnect)"
     {:disconnect, {:close, from}, state}
   end
 
+  # @doc ~S"""
+  #
+  # """
   def handle_call({:call_rpc, service, procedure}, _, %{sock: sock} = state) do
+    Logger.debug "in #{__MODULE__}.handle_call({:call_rpc, service, procedure})"
     req = [service: service, procedure: procedure]
           |> Jooce.Protobuf.Request.new
           |> Jooce.Protobuf.Request.encode
     req_len = req |> String.length |> :gpb.encode_varint
     :gen_tcp.send(sock, req_len <> req)
 
-    {resp_len, _} = sock |> read_varint |> :gpb.decode_varint
+    {resp_len, _} = sock |> Jooce.Connection.read_varint |> :gpb.decode_varint
     {:ok, resp} = :gen_tcp.recv(sock, resp_len, 3000)
 
     response = Jooce.Protobuf.Response.decode(resp)
@@ -174,14 +226,18 @@ defmodule Jooce.Connection.Rpc do
     end
   end
 
+  # @doc ~S"""
+  #
+  # """
   def handle_call({:call_rpc, service, procedure, args}, _, %{sock: sock} = state) do
+    Logger.debug "in #{__MODULE__}.handle_call({:call_rpc, service, procedure, args})"
     req = [service: service, procedure: procedure, arguments: build_args(args)]
           |> Jooce.Protobuf.Request.new
           |> Jooce.Protobuf.Request.encode
     req_len = req |> String.length |> :gpb.encode_varint
     :gen_tcp.send(sock, req_len <> req)
 
-    {resp_len, _} = sock |> read_varint |> :gpb.decode_varint
+    {resp_len, _} = sock |> Jooce.Connection.read_varint |> :gpb.decode_varint
     {:ok, resp} = :gen_tcp.recv(sock, resp_len, 3000)
 
     response = Jooce.Protobuf.Response.decode(resp)
@@ -195,31 +251,31 @@ defmodule Jooce.Connection.Rpc do
     end
   end
 
-  @doc """
-  Reads a varint from a connection.
+  ##
+  ## utility functions
+  ##
 
-  """
-  def read_varint(sock, buffer \\ <<>>) do
-    case :gen_tcp.recv(sock, 1, 3000) do
-      {:ok, <<1 :: size(1), _ :: bitstring>> = byte} ->
-        read_varint(sock, buffer <> byte)
-      {:ok, <<0 :: size(1), _ :: size(7)>> = byte} ->
-        buffer <> byte
-      ## handle timeout explicitly -- close connection, crash process?
-      _ ->
-        buffer
-    end
-  end
-
+  # @doc ~S"""
+  #
+  # """
   def build_stream_request(service, procedure) do
+    Logger.debug "in #{__MODULE__}.build_stream_request/2"
     Jooce.Protobuf.Request.new(service: service, procedure: procedure)
   end
 
+  # @doc ~S"""
+  #
+  # """
   def build_stream_request(service, procedure, args) do
+    Logger.debug "in #{__MODULE__}.build_stream_request/3"
     Jooce.Protobuf.Request.new(service: service, procedure: procedure, arguments: build_args(args))
   end
 
+  # @doc ~S"""
+  #
+  # """
   def build_args(args) do
+    Logger.debug "in #{__MODULE__}.build_args/1"
     new_args = for {arg, i} <- Enum.with_index(args), into: [] do
                  case arg do
                    {value, {:module, module}, _msg_defs} ->
