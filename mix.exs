@@ -38,6 +38,7 @@ defmodule Jooce.Mixfile do
       {:connection, "~> 1.0.4"},
       {:credo, "~> 0.7.2", only: [:dev, :test]},
       {:espec, "~> 1.2.2", only: :test},
+      {:ex_doc, "~> 0.14", only: :dev, runtime: false},
       {:exprotobuf, "~> 1.2.3"},
       {:gpb, override: true, git: "git://github.com/CraigCottingham/gpb.git", branch: "export-functions"},
     ]
