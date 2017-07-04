@@ -10,9 +10,9 @@ defmodule Jooce do
   ## API
   ##
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+  Connect to the Jooce client.
+  """
   def connect(name) do
     Logger.debug "in #{__MODULE__}.connect/1"
     Jooce.Client.connect(name)
@@ -22,9 +22,9 @@ defmodule Jooce do
   ## internal API
   ##
 
-  # @doc ~S"""
-  # Open a connection to a kRPC server.
-  # """
+  @doc """
+  Open a connection to a kRPC server.
+  """
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
     Logger.debug "in #{__MODULE__}.start/2"
@@ -38,7 +38,7 @@ defmodule Jooce do
     Supervisor.start_link(children, opts)
   end
 
-  # @doc ~S"""
+  # @doc """
   # Close a connection to a kRPC server.
   # """
   # def stop(conn) do
@@ -46,7 +46,7 @@ defmodule Jooce do
   #   Jooce.Connection.stop(conn)
   # end
 
-  # @doc ~S"""
+  # @doc """
   # Returns some information about the server, such as the version.
   #
   # ## RPC signature
@@ -65,7 +65,7 @@ defmodule Jooce do
   #   Jooce.Protobuf.Status.decode(return_value)
   # end
 
-  # @doc ~S"""
+  # @doc """
   # Returns information on all services, procedures, classes, properties etc. provided by the server.
   # Can be used by client libraries to automatically create functionality such as stubs.
   #
@@ -85,15 +85,15 @@ defmodule Jooce do
   #   Jooce.Protobuf.Services.decode(return_value)
   # end
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+  Output a description of all services.
+  """
   def describe_services(%Jooce.Protobuf.Services{services: services}, device \\ :stderr) do
     Logger.debug "in #{__MODULE__}.describe_services/2"
     for service <- services, do: describe_service(service, device)
   end
 
-  # @doc ~S"""
+  # @doc """
   # A list of RPC clients that are currently connected to the server.
   # Each entry in the list is a clients identifier, name and address.
   #
@@ -106,7 +106,7 @@ defmodule Jooce do
   #   Enum.map(Jooce.Protobuf.List.decode(return_value).items, fn(x) -> extract_client_info(x) end)
   # end
 
-  # @doc ~S"""
+  # @doc """
   # Get the current game scene.
   #
   # ## RPC signature
@@ -142,9 +142,9 @@ defmodule Jooce do
   #   {guid, name, ip_address}
   # end
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+  Output a description of a single service.
+  """
   def describe_service(%{name: "KRPC"} = service, device) do
     Logger.debug "in #{__MODULE__}.describe_service/2"
     IO.puts device, "defmodule Jooce.#{service.name} do"
@@ -158,19 +158,19 @@ defmodule Jooce do
     IO.puts device, "end"
   end
 
-  # @doc ~S"""
+  # @doc """
   #
   # """
-  def describe_service(_service, _device) do
-
-  end
-
-  # @doc ~S"""
+  # def describe_service(_service, _device) do
   #
-  # """
+  # end
+
+  @doc """
+  Output moduledoc for a service.
+  """
   def describe_module_doc(documentation, device) do
     Logger.debug "in #{__MODULE__}.describe_module_doc/2"
-    IO.puts device, ~s(  @moduledoc ~S""")
+    IO.puts device, ~s(  @moduledoc """)
     for line <- String.split(documentation, "\n", trim: true) do
       IO.puts device, "  #{line}"
     end
@@ -188,20 +188,20 @@ defmodule Jooce do
   #   end
   # end
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+  Output documentation for a service's procedures.
+  """
   def describe_procedures(procedures, device) do
     Logger.debug "in #{__MODULE__}.describe_procedures/2"
     for procedure <- procedures, do: describe_procedure(procedure, device)
   end
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+  Output documentation for a single procedure.
+  """
   def describe_procedure(procedure, device) do
     Logger.debug "in #{__MODULE__}.describe_procedure/2"
-    IO.puts device, ~s(\n  @doc ~S""")
+    IO.puts device, ~s(\n  @doc """)
     # IO.puts device, (inspect procedure)
     for line <- String.split(procedure.documentation, "\n", trim: true) do
       IO.puts device, "  #{line}"

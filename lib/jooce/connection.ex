@@ -2,15 +2,17 @@ defmodule Jooce.Connection do
   use Supervisor
   require Logger
 
-  @moduledoc false
+  @moduledoc """
+  Documentation for Jooce.Connection.
+  """
 
   ##
   ## API
   ##
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+
+  """
   def start_link(name \\ "Jooce") do
     Logger.debug "in #{__MODULE__}.start_link/1"
     Supervisor.start_link(__MODULE__, %{sup: nil, name: name}, [name: String.to_atom("Jooce.Connection(#{name})")])
@@ -20,9 +22,9 @@ defmodule Jooce.Connection do
   ## callbacks
   ##
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+
+  """
   def init(args) do
     Logger.debug "in #{__MODULE__}.init/1"
     child_opts = [restart: :temporary, function: :start_link]

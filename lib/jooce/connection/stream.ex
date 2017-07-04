@@ -2,7 +2,9 @@ defmodule Jooce.Connection.Stream do
   use Connection
   require Logger
 
-  @moduledoc false
+  @moduledoc """
+  Documentation for Jooce.Connection.Stream.
+  """
 
   @initial_state      %{host: '127.0.0.1', port: 50001, opts: [], timeout: 5000, sock: nil, guid: nil}
   @helo               <<0x48, 0x45, 0x4C, 0x4C, 0x4F, 0x2D, 0x53, 0x54, 0x52, 0x45, 0x41, 0x4D>>
@@ -12,17 +14,17 @@ defmodule Jooce.Connection.Stream do
   ## API
   ##
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+
+  """
   def start_link(guid, name) do
     Logger.debug "in #{__MODULE__}.start_link/2"
     Connection.start_link(__MODULE__, %{@initial_state | guid: guid}, [name: String.to_atom("Stream(#{name})")])
   end
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+
+  """
   def stop(conn) do
     Logger.debug "in #{__MODULE__}.stop/1"
     Connection.call(conn, :close)
@@ -36,17 +38,17 @@ defmodule Jooce.Connection.Stream do
   ## callbacks
   ##
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+
+  """
   def init(state) do
     Logger.debug "in #{__MODULE__}.init/1"
     {:connect, :init, %{state | sock: nil}}
   end
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+
+  """
   def connect(_info, %{sock: nil} = state) do
     Logger.debug "in #{__MODULE__}.connect/2"
     case :gen_tcp.connect(state.host, state.port, [:binary, {:active, false}, {:packet, :raw}] ++ state.opts, state.timeout) do
@@ -69,9 +71,9 @@ defmodule Jooce.Connection.Stream do
     end
   end
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+
+  """
   def receive_loop(sock) do
     Logger.debug "in #{__MODULE__}.receive_loop/1"
     try do
@@ -100,9 +102,9 @@ defmodule Jooce.Connection.Stream do
     receive_loop(sock)
   end
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+
+  """
   def disconnect(info, %{sock: sock} = state) do
     Logger.debug "in #{__MODULE__}.disconnect/2"
     :ok = :gen_tcp.close(sock)
@@ -117,17 +119,17 @@ defmodule Jooce.Connection.Stream do
     {:stop, :normal, %{state | sock: nil}}
   end
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+
+  """
   def handle_call(_, _, %{sock: nil} = state) do
     :error_logger.format("Closing connection because sock is nil~n", [])
     {:reply, {:error, :closed}, state}
   end
 
-  # @doc ~S"""
-  #
-  # """
+  @doc """
+
+  """
   def handle_call(:close, from, state) do
     Logger.debug "in #{__MODULE__}.handle_call(:close)"
     {:disconnect, {:close, from}, state}
