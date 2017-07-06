@@ -80,18 +80,25 @@ defmodule Jooce.Connection.Stream do
       {resp_len, _} = sock |> Jooce.Connection.read_varint |> :gpb.decode_varint
       case :gen_tcp.recv(sock, resp_len, 3000) do
         {:ok, resp} ->
-          response = Jooce.Protobuf.Response.decode(resp)
-          cond do
-            response.has_error ->
-              # {:reply, {:error, response.error, response.time}, state}
-              Logger.error "reply has_error: #{inspect response.error}"
-            response.has_return_value ->
-              # {:reply, {:ok, response.return_value, response.time}, state}
-              Logger.error "reply has_return_value: #{inspect response.return_value}"
-            true ->
-              # {:reply, {:ok, nil, response.time}, state}
-              Logger.debug "reply :ok"
+          stream_message = Jooce.Protobuf.StreamMessage.decode(resp)
+          for stream_response <- stream_message.responses do
+            response = stream_response.response
+            # Logger.debug(inspect(stream_response.response))
+            cond do
+              response.has_error ->
+                # {:reply, {:error, response.error, response.time}, state}
+                Logger.error "reply has_error: #{inspect response.error}"
+              response.has_return_value ->
+                # {:reply, {:ok, response.return_value, response.time}, state}
+                # Logger.info "reply has_return_value: #{inspect response.return_value}"
+                {altitude, _} = :gpb.decode_type(:double, response.return_value, nil)
+                Logger.info "mean altitude: #{altitude}"
+              true ->
+                # {:reply, {:ok, nil, response.time}, state}
+                Logger.debug "reply :ok"
+            end
           end
+
         other ->
           Logger.error "got #{inspect other} instead"
       end

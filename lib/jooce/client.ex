@@ -7,19 +7,11 @@ defmodule Jooce.Client do
   """
 
   ##
-  ## API
+  ## public API
   ##
 
   @doc """
-
-  """
-  def start_link(state, opts \\ []) do
-    Logger.debug "in #{__MODULE__}.start_link/2"
-    GenServer.start_link(__MODULE__, state, opts)
-  end
-
-  @doc """
-
+  Simple ping test on the GenServer.
   """
   def ping do
     Logger.debug "in #{__MODULE__}.ping"
@@ -27,7 +19,7 @@ defmodule Jooce.Client do
   end
 
   @doc """
-
+  Connect to the Jooce client. Each connection should have a unique name.
   """
   def connect(name) do
     Logger.debug "in #{__MODULE__}.connect/1"
@@ -35,7 +27,7 @@ defmodule Jooce.Client do
   end
 
   @doc """
-
+  Ping test the connection.
   """
   def ping_connection(conn) do
     Logger.debug "in #{__MODULE__}.ping_connection/1"
@@ -50,28 +42,34 @@ defmodule Jooce.Client do
     Jooce.Connection.Rpc.call_rpc(conn, service, procedure)
   end
 
-  @doc """
-
-  """
   def call_rpc(conn, service, procedure, args) do
     Logger.debug "in #{__MODULE__}.call_rpc/3"
     Jooce.Connection.Rpc.call_rpc(conn, service, procedure, args)
   end
 
-  @doc """
-
-  """
+  # @doc """
+  # Add a streaming request and return its identifier.
+  # """
   def add_stream(conn, service, procedure) do
     Logger.debug "in #{__MODULE__}.add_stream/3"
-    call_rpc(conn, "KRPC", "AddStream", [{Jooce.Connection.Rpc.build_stream_request(service, procedure), {:module, Jooce.Protobuf.Request}, nil}])
+    call_rpc(conn, "KRPC", "AddStream", [{Jooce.Connection.build_stream_request(service, procedure), {:module, Jooce.Protobuf.Request}, nil}])
   end
+
+  def add_stream(conn, service, procedure, args) do
+    Logger.debug "in #{__MODULE__}.add_stream/4"
+    call_rpc(conn, "KRPC", "AddStream", [{Jooce.Connection.build_stream_request(service, procedure, args), {:module, Jooce.Protobuf.Request}, nil}])
+  end
+
+  ##
+  ## internal API
+  ##
 
   @doc """
 
   """
-  def add_stream(conn, service, procedure, args) do
-    Logger.debug "in #{__MODULE__}.add_stream/4"
-    call_rpc(conn, "KRPC", "AddStream", [{Jooce.Connection.Rpc.build_stream_request(service, procedure, args), {:module, Jooce.Protobuf.Request}, nil}])
+  def start_link(state, opts \\ []) do
+    Logger.debug "in #{__MODULE__}.start_link/2"
+    GenServer.start_link(__MODULE__, state, opts)
   end
 
   ##
