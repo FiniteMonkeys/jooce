@@ -41,6 +41,40 @@ defmodule Jooce.Connection do
   ##
 
   @doc """
+
+  """
+  def build_stream_request(service, procedure) do
+    Logger.debug "in #{__MODULE__}.build_stream_request/2"
+    Jooce.Protobuf.Request.new(service: service, procedure: procedure)
+  end
+
+  @doc """
+
+  """
+  def build_stream_request(service, procedure, args) do
+    Logger.debug "in #{__MODULE__}.build_stream_request/3"
+    Jooce.Protobuf.Request.new(service: service, procedure: procedure, arguments: build_args(args))
+  end
+
+  @doc """
+
+  """
+  def build_args(args) do
+    Logger.debug "in #{__MODULE__}.build_args/1"
+    new_args = for {arg, i} <- Enum.with_index(args), into: [] do
+                 case arg do
+                   {value, {:module, module}, _msg_defs} ->
+                     Jooce.Protobuf.Argument.new(position: i, value: apply(module, :encode, [value]))
+                   {value, type, msg_defs} ->
+                     Jooce.Protobuf.Argument.new(position: i, value: :gpb.encode_value(value, type, msg_defs))
+                   _ ->
+                     nil
+                 end
+               end
+    Enum.reject(new_args, fn(x) -> x == nil end)
+  end
+
+  @doc """
   Reads a varint from a connection.
   """
   def read_varint(sock, buffer \\ <<>>) do

@@ -47,17 +47,18 @@ defmodule Jooce.Connection.Rpc do
     Connection.call(conn, :ping)
   end
 
-  @doc """
-  Add a streaming request and return its identifier.
-
-  ## RPC signature
-  AddStream(KRPC.Request request) : uint32
-  """
-  def add_stream(conn, service, procedure) do
-    {:ok, stream_id, time} = Connection.call(conn, {:call_rpc, "KRPC", "AddStream", [{build_stream_request(service, procedure), {:module, Jooce.Protobuf.Request}, nil}]})
-    # call into Jooce.Connection.Stream
-    {:ok, stream_id, time}
-  end
+  # @doc """
+  # Add a streaming request and return its identifier.
+  #
+  # ## RPC signature
+  # AddStream(KRPC.Request request) : uint32
+  # """
+  # def add_stream(conn, service, procedure) do
+  #   Logger.debug "in #{__MODULE__}.add_stream/3"
+  #   {:ok, stream_id, time} = Connection.call(conn, {:call_rpc, "KRPC", "AddStream", [{Jooce.Connection.build_stream_request(service, procedure), {:module, Jooce.Protobuf.Request}, nil}]})
+  #   # call into Jooce.Connection.Stream
+  #   {:ok, stream_id, time}
+  # end
 
   # def add_stream(conn, service, procedure, args) do
   #   {:ok, stream_id, time} = Connection.call(conn, {:call_rpc, "KRPC", "AddStream", [{build_stream_request(service, procedure, args), {:module, Jooce.Protobuf.Request}, nil}]})
@@ -233,7 +234,7 @@ defmodule Jooce.Connection.Rpc do
   """
   def handle_call({:call_rpc, service, procedure, args}, _, %{sock: sock} = state) do
     Logger.debug "in #{__MODULE__}.handle_call({:call_rpc, service, procedure, args})"
-    req = [service: service, procedure: procedure, arguments: build_args(args)]
+    req = [service: service, procedure: procedure, arguments: Jooce.Connection.build_args(args)]
           |> Jooce.Protobuf.Request.new
           |> Jooce.Protobuf.Request.encode
     req_len = req |> String.length |> :gpb.encode_varint
@@ -251,43 +252,5 @@ defmodule Jooce.Connection.Rpc do
       true ->
         {:reply, {:ok, nil, response.time}, state}
     end
-  end
-
-  ##
-  ## utility functions
-  ##
-
-  @doc """
-
-  """
-  def build_stream_request(service, procedure) do
-    Logger.debug "in #{__MODULE__}.build_stream_request/2"
-    Jooce.Protobuf.Request.new(service: service, procedure: procedure)
-  end
-
-  @doc """
-
-  """
-  def build_stream_request(service, procedure, args) do
-    Logger.debug "in #{__MODULE__}.build_stream_request/3"
-    Jooce.Protobuf.Request.new(service: service, procedure: procedure, arguments: build_args(args))
-  end
-
-  @doc """
-
-  """
-  def build_args(args) do
-    Logger.debug "in #{__MODULE__}.build_args/1"
-    new_args = for {arg, i} <- Enum.with_index(args), into: [] do
-                 case arg do
-                   {value, {:module, module}, _msg_defs} ->
-                     Jooce.Protobuf.Argument.new(position: i, value: apply(module, :encode, [value]))
-                   {value, type, msg_defs} ->
-                     Jooce.Protobuf.Argument.new(position: i, value: :gpb.encode_value(value, type, msg_defs))
-                   _ ->
-                     nil
-                 end
-               end
-    Enum.reject(new_args, fn(x) -> x == nil end)
   end
 end
